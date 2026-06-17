@@ -18,7 +18,20 @@ Several FEA backends are wired in:
 from .buckling import beam_euler_utilization, panel_buckling_utilization
 from .beam_shell import solve_beam_shell, solve_beam_shell_laminate
 from .fea import FEAResult, solve_linear_elastic
-from .frame import BeamSection, FrameResult, solve_frame, von_mises_per_element
+from .frame import (
+    BeamSection,
+    FrameResult,
+    assemble_frame_K,
+    recover_frame_forces,
+    solve_frame,
+    von_mises_per_element,
+)
+from .journal_bc import (
+    JournalBC,
+    apply_journal_springs,
+    journal_reactions,
+    solve_frame_journal,
+)
 from .mesh import TetMesh, tet_mesh_wing
 from .projection import project_panels_to_oml_tris
 from .shell import (
@@ -50,6 +63,12 @@ __all__ = [
     "solve_beam_shell",
     "solve_beam_shell_laminate",
     "solve_frame",
+    "assemble_frame_K",
+    "recover_frame_forces",
+    "JournalBC",
+    "apply_journal_springs",
+    "journal_reactions",
+    "solve_frame_journal",
     "solve_linear_elastic",
     "solve_shell_elastic",
     "tet_mesh_wing",
