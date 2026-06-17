@@ -1897,31 +1897,65 @@ at depth; and a tip point-load overstates moment/deflection vs the real distribu
 journal-BC *mechanics* test was valid; the deflection *magnitude* was not a structural prediction.
 
 **First-order, REPRESENTATIVE check (`runs/firstorder_mast_stiffness.py`): the slender mast IS
-genuinely deflection- + buckling-governed — but the lever is section DEPTH.** Distributed OP-2
-load (resultant at the CE) + UD-carbon box caps at depth: the baseline 1 m-chord / t/c 0.18 mast
-deflects **~11× the 0.44 m limit** and locally buckles (λ 0.5), while strength is fine (R 3.8).
-**Deepening the section (t/c ~0.5–0.6) meets deflection + buckling at the SAME cap mass** (`I ∝
-depth²` for free); growing the chord works but costs mass ∝ chord and doesn't fix local buckling;
-thickening caps is hopeless for deflection (40 mm = 1.3 t). **Implication for the geometry rethink
-(deferred): the bare wingmast wants a DEEP structural section (t/c ~0.5–0.6), not a thin NACA-0018
-— the soft sail provides the aero shape, so the rigid mast under it is free to be deep.** Caveat:
-first-order (closed-form local buckling; E_cap/σ_allow placeholders; the 0.44 m limit is itself a
-serviceability choice).
+genuinely deflection- AND buckling-governed — section DEPTH is the deflection lever; local
+buckling is a SEPARATE binding constraint deepening alone does NOT close.** Distributed OP-2 load
+(∝chord, scaled so the base moment = 160.5 kN·m exactly; resultant arm *derived* ≈ 10.1 m, not
+pinned to the CE) + UD-carbon box caps at depth: the baseline 1 m-chord / t/c 0.18 mast deflects
+**~12× the 0.44 m limit**, while strength is fine (R 3.6). **Deflection clears only at t/c ≈ 0.57**
+(`I ∝ depth²`) — but at that depth the thin 4 mm caps **locally buckle (knocked-down λ ≈ 0.7 < 1)**,
+so a deep section needs its cap panels stabilised too (thicker caps / more spars / closer web
+spacing — a laminate-design lever). Growing the chord clears deflection but costs mass ∝ chord and
+still doesn't fix buckling; thickening caps fixes buckling but is hopeless for deflection (40 mm =
+1.8 t, still 1.2× over). **Implication for the geometry rethink (deferred): the bare wingmast wants
+a DEEP structural section (t/c ≳ 0.57) WITH a stabilised cap panel — the soft sail provides the
+aero shape, so the rigid mast under it is free to be deep.** Caveats: first-order (the local-buckling
+λ is an isotropic plate formula × a 0.4 orthotropic knockdown — the un-knocked-down value is
+optimistic ~2–3× for a 0°-cap; E_cap/σ_allow placeholders; mass counts caps + webs; the 0.44 m
+limit is itself a serviceability choice; Article III still requires an eigen check at n≥24).
 
 **Corrected operational load VECTORS (`aero/load_vectors.py`, `R-AE-5`/`R-S-2`) (user-driven).**
 The operational load is NOT a transverse point force: the deployed wingsail's **CoP sits slightly
 aft of the mast pivot** (the aero balance that passively feathers the sail), so the resultant at
 that offset CoP produces, **distributed along the span**: chord-normal (lift/heeling → bending),
 chordwise (drag), AND **torsion about the pivot = normal · (CoP − pivot offset)** (the hinge
-moment). `AeroBalance` + `operational_mast_load` + `nodal_load_vectors`: force-conserving (∫ =
-the RM-capped resultant; centroid at the CE; nodal-lumped to Fy/Fx/Mz for `solve_frame_journal`).
-**Key reconciliation (user-flagged):** the CoP-vs-pivot offset is the SAME feature behind the
-survival feathering (`feathering.restoring_margin_xc`) — and a "slightly behind" CoP gives a
-**small hinge torque (~1.3 kN·m at 0.03c offset)**, far below the **~4.3 kN·m the old
-`Cm_axis = −0.16` implied** — so that Cm was inconsistent with the design intent. *Follow-up:*
-`design_cases`/`feathering` should adopt the single `AeroBalance` offset (the Cm-based torque
-superseded). 7 tests; suite 294 → **301**. (load model is mast-section-independent — a stable
+moment). `AeroBalance` + `operational_mast_load` + `nodal_load_vectors`: the input is the
+**RM-capped base bending moment** (about the deck partners) and the ∝chord shape is **scaled so its
+moment about that datum = the design 160.5 kN·m exactly** — the total force (~14.6 kN) and resultant
+arm (~11.0 m above the partners) are then *derived*, NOT pinned to the CE. Nodal-lumped (edge-exact
+tributary integration, conserving force + base moment to machine precision) to Fy/Fx/Mz for
+`solve_frame_journal`. **Diagnostic (user-flagged), NOT a reconciliation:** the CoP-vs-pivot offset
+is the SAME feature behind the survival feathering (`feathering.restoring_margin_xc`); under this
+offset model a "slightly behind" CoP gives a **small hinge torque (~1.3 kN·m at 0.03c)**. This is
+**not directly comparable** to the `Cm_axis = −0.16` torque the operational scenario carries — the
+offset model omits the camber (Cm0) moment a cambered soft wingsail holds even at zero lift, and
+assumes a CL-independent CoP, so it cannot by itself prove the Cm "wrong". *Follow-up:* the A.5
+distributed-torsion planform must pin the camber term before `design_cases`/`feathering` adopt a
+single offset. 8 tests; suite 301 → **302**. (load model is mast-section-independent — a stable
 foundation regardless of the geometry rethink.)
+
+**Load-model adversarial review + fixes (2026-06-17) — 11 defects (2 high, 5 med, 4 low); the
+load model was non-conservative and two headline claims were overstated.** A physics review (5
+dimensions) of `aero/load_vectors.py` + `runs/firstorder_mast_stiffness.py` caught — and these
+fixes corrected — the same "verdict set by assumption" pattern as the Phase G/A reviews:
+**(1, was non-conservative)** the load resultant was back-derived as `F = M_base/CE` then
+redistributed ∝chord, whose centroid lands at 10.08 m (not the 10.7 m CE), so the reproduced base
+moment came out **151 kN·m — 6% BELOW** the OP-2 design 160.5; **and** it was measured about z=0
+(wing root), not the partners (z=−0.9). Fixed by **inverting the construction**: take the RM-capped
+**base moment about the partners** as the input and scale the ∝chord shape so `∫ w·(z−z_partners) =
+M_base` exactly — force (~14.6 kN) + arm (~11.0 m) now *derived*. **(2, overstated)** the
+Cm-vs-offset "reconciliation" was apples-to-oranges (it dropped the camber Cm0 term and compared a
+no-DAF static value against a with-DAF design value) — re-framed as a *diagnostic* per Article VII,
+"inconsistent" struck. **(3)** the first-order buckling used an isotropic plate σ_cr (optimistic
+~2–3× for a 0°-cap) — added a 0.4 orthotropic knockdown, which **flips the conclusion**: a deep
+(t/c 0.57) section clears DEFLECTION but its thin 4 mm caps **locally buckle (λ ≈ 0.7)**, so the
+deepen lever needs cap-panel stabilisation too — buckling is a *separate* binding constraint, not
+auto-satisfied. **(4)** nodal lumping lost ~2% (one-sided trapezoid truncation) → now edge-exact
+(machine-precision force + base-moment conservation). **(5)** first-order mass now counts caps +
+webs (webs grow ∝ depth), so the deepen-vs-widen comparison is mass-fair; the "t/c 0.5–0.6 meets
+deflection" band tightened to the measured crossover **t/c ≈ 0.57**. Net: the load foundation is now
+self-consistent and conservative; the geometry implication (deep section + stabilised caps) is
+sharper. (review wall **~6 min**, 5-dimension fan-out; fixes + suite 301 → **302**, 8 load-vector
+tests.)
 
 **Phase-A adversarial review + fixes (2026-06-17) — 10 defects (0 high, 6 med, 4 low); D-2
 re-framed from "resolved" to "conditionally resolved".** A 27-agent physics review (5

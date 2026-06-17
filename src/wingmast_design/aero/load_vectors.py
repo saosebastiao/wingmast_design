@@ -52,12 +52,15 @@ class AeroBalance:
 @dataclass(frozen=True)
 class DistributedMastLoad:
     """The spanwise-distributed operational load on the mast, in the structural frame
-    (chord +X, normal +Y, span +Z). Densities are per unit span."""
+    (chord +X, normal +Y, span +Z). Densities are per unit span. ``base_z_m`` is the datum the
+    base bending moment is reported about — the **deck-partners** (upper journal, z=−0.9), the
+    structurally-relevant base section where the bearing reacts the moment — NOT the wing root."""
 
     z: np.ndarray                 # spanwise stations (m), root (0) → tip
     normal_Npm: np.ndarray        # chord-normal (lift/heeling) force / length [N/m]  → +Y
     chordwise_Npm: np.ndarray     # chordwise (drag) force / length [N/m]            → +X
     torsion_Nmpm: np.ndarray      # torsion about the pivot / length [N·m/m]         → Mz (+Z)
+    base_z_m: float = -0.9        # the base/datum section (deck partners)
 
     @property
     def total_normal_N(self) -> float:
@@ -73,53 +76,73 @@ class DistributedMastLoad:
 
     @property
     def base_bending_Nm(self) -> float:
-        """Root (z=0) bending moment from the normal load = ∫ w(z)·z dz."""
-        return float(np.trapezoid(self.normal_Npm * self.z, self.z))
+        """Bending moment at the base datum (the partners) = ∫ w(z)·(z − base_z) dz."""
+        return float(np.trapezoid(self.normal_Npm * (self.z - self.base_z_m), self.z))
+
+    @property
+    def resultant_arm_m(self) -> float:
+        """Derived height of the load resultant above the base datum (= base_bending / force).
+        For a ∝chord (taper 0.6) shape this lands ~11 m above the partners — near, but inboard
+        of, a pure resultant-at-CE model; it is a *derived* quantity, not pinned to the CE."""
+        return self.base_bending_Nm / self.total_normal_N
 
 
 def operational_mast_load(
-    transverse_force_N: float, balance: AeroBalance, *,
-    span_m: float = 22.0, wingsail_chord_root_m: float = 3.6, taper: float = 0.6,
-    lift_drag_ratio: float = 15.0, n: int = 200,
+    base_moment_Nm: float, balance: AeroBalance, *,
+    base_z_m: float = -0.9, span_m: float = 22.0, wingsail_chord_root_m: float = 3.6,
+    taper: float = 0.6, lift_drag_ratio: float = 15.0, n: int = 200,
 ) -> DistributedMastLoad:
-    """Build the distributed mast load for an operational case from its RM-capped transverse
-    (heeling) force resultant + the aero balance.
+    """Build the distributed mast load for an operational case from its **RM-capped base bending
+    moment** (about the partners) + the aero balance.
 
-    The transverse force is the chord-normal (lift/heeling) resultant; it is distributed ∝ the
-    (tapering) **wingsail** chord along the span (so its centroid sits at the centre of effort).
-    Drag is a smaller chordwise component (``normal / lift_drag_ratio``). The torsion density is
-    ``normal(z) · cop_offset · wingsail_chord(z)`` — the hinge moment from the offset CoP.
+    The spanwise shape ∝ the (tapering) **wingsail** chord is **scaled so its moment about the
+    base datum equals ``base_moment_Nm``** — so the governing OP-2 base moment is reproduced
+    *exactly* by construction, with the total force + resultant arm *derived* (not assumed equal
+    to the CE). Drag is ``normal / lift_drag_ratio``; the torsion density is ``normal(z) ·
+    cop_offset · wingsail_chord(z)`` — the hinge moment from the offset CoP.
     """
     z = np.linspace(0.0, span_m, n)
     chord = wingsail_chord_root_m * (1.0 + (taper - 1.0) * z / span_m)
-    normal = chord / np.trapezoid(chord, z) * transverse_force_N      # ∝ chord, integrates to F
-    chordwise = normal / lift_drag_ratio                              # drag component
-    torsion = normal * balance.cop_offset_xc * chord                 # hinge moment / length
-    return DistributedMastLoad(z=z, normal_Npm=normal, chordwise_Npm=chordwise, torsion_Nmpm=torsion)
+    arm = z - base_z_m                                                # lever from the base datum
+    scale = base_moment_Nm / np.trapezoid(chord * arm, z)            # ⇒ ∫ w·arm = base_moment
+    normal = chord * scale
+    chordwise = normal / lift_drag_ratio                            # drag component
+    torsion = normal * balance.cop_offset_xc * chord                # hinge moment / length
+    return DistributedMastLoad(z=z, normal_Npm=normal, chordwise_Npm=chordwise,
+                               torsion_Nmpm=torsion, base_z_m=base_z_m)
 
 
 def nodal_load_vectors(load: DistributedMastLoad, node_z: np.ndarray) -> np.ndarray:
     """Lump a distributed mast load onto structural nodes at heights ``node_z`` (sorted, span
     +Z). Returns an (n_nodes, 6) array [Fx, Fy, Fz, Mx, My, Mz]: chordwise→Fx, normal→Fy,
-    torsion→Mz. Force/torque-conserving (each density integrated over the node's tributary span).
+    torsion→Mz.
+
+    Force/torque-conserving **to machine precision**: each density is integrated over the node's
+    tributary span with the density interpolated at the *exact* tributary edges (so no boundary
+    sliver is dropped — the piecewise-linear density integrates exactly partition-by-partition).
     """
     node_z = np.asarray(node_z, dtype=float)
     order = np.argsort(node_z)
     zs = node_z[order]
     n_nodes = len(zs)
-    # tributary edges: midpoints between nodes (half-open at the ends)
+    # tributary edges: midpoints between nodes; clamped to the load support at the ends
     edges = np.empty(n_nodes + 1)
     edges[1:-1] = 0.5 * (zs[:-1] + zs[1:])
     edges[0], edges[-1] = zs[0], zs[-1]
+    z = load.z
+    edges = np.clip(edges, z[0], z[-1])
+
+    def _tributary_integral(dens: np.ndarray, lo: float, hi: float) -> float:
+        if hi <= lo:
+            return 0.0
+        interior = z[(z > lo) & (z < hi)]
+        zz = np.concatenate(([lo], interior, [hi]))
+        return float(np.trapezoid(np.interp(zz, z, dens), zz))
 
     out = np.zeros((n_nodes, 6))
-    z = load.z
     for k in range(n_nodes):
         lo, hi = edges[k], edges[k + 1]
-        m = (z >= lo) & (z <= hi)
-        if m.sum() < 2:
-            continue
-        out[order[k], 0] = np.trapezoid(load.chordwise_Npm[m], z[m])   # Fx (drag)
-        out[order[k], 1] = np.trapezoid(load.normal_Npm[m], z[m])      # Fy (lift/heeling → bending)
-        out[order[k], 5] = np.trapezoid(load.torsion_Nmpm[m], z[m])    # Mz (hinge / pivot torsion)
+        out[order[k], 0] = _tributary_integral(load.chordwise_Npm, lo, hi)  # Fx (drag)
+        out[order[k], 1] = _tributary_integral(load.normal_Npm, lo, hi)     # Fy (lift→bending)
+        out[order[k], 5] = _tributary_integral(load.torsion_Nmpm, lo, hi)   # Mz (hinge torsion)
     return out
