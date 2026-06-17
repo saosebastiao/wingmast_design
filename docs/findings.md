@@ -1763,6 +1763,39 @@ re-verified green after fixes; 2 new guard tests (forward-aero import-graph, run
 constant dedup) added. **Why record:** negative/partial results are findings (Article VII);
 the original entry under-disclosed the residual `runs/` duplication and the import-graph gap.
 
+### Phase G — Rotating wingmast geometry (2026-06-16)
+
+Detailed spec/plan: `docs/specs/01-rotating-geometry/` (`R-GG-1…6`, parents `R-GEO-1…5`/
+`R-CON-1`; closes `G-1`). Branch `phaseG-rotating-geometry` (stacks on Phase 0).
+
+**Phase-G geometry complete (2026-06-16) — green, parametric twin-rig CAD + fit (no FEA).**
+Built the full `R-GEO`/`R-CON-1` geometry the later phases consume, all suite-green-gated:
+**G.1** `geometry/kulfan.py` — `CSTAirfoil` wraps AeroSandbox's Kulfan in the project contour
+ordering (verified upper-TE→LE→lower-TE); NACA-0018 reproduced to **max|Δy| = 1.7e-4**
+(measured), root→tip blend. **G.2** `geometry/rotating_mast.py` — `RotatingMastSpec` +
+`build_rotating_mast_solid`: the heel→stock→deck-partners→transition→wing anatomy as named
+zones, the two tagged journal stations (bury = stock length), the rotational-center foil
+offset, and **entasis** (resolves `D-5` = sin-bow centroid offset, composes with taper);
+builds a valid 25.4 m³ solid (z −4.0→22.0 m), reusing the audited `ruled` loft + smoothstep
+transition + airfoil ordering (a `contour=` param threaded through `wing.py`,
+behaviour-preserving). **G.3** `geometry/box_spars.py` — pragmatic partition: ≥3 convex
+box-spar cells with filleted (blend-curve) corners + the inter-spar longeron channels whose
+void **scales as blend_radius²** (the `R-GEO-5` coupling; section-set + loft, OCC-boolean-free,
+Phase-S-meshable). **G.4** `geometry/fit.py` — `check_fit` returns a signed margin; *bites*
+(reference feasible +102 mm at the thin tip; inflated blend/shell → negative). **G.5**
+`geometry/parameters.py` — the normative 13-parameter table (bounds + increments, basis §2)
++ `MastGeometryParameters`. **G.6** `geometry/assembly.py` + `examples/54_rotating_wingmast`
+— the tandem twin-rig assembly (2 masts at 6 m spacing), fit verdict, STL (5.5 MB) + STEP
+(690 KB) export, **0.5 s**. **Verification:** 34 new tests (`tests/geometry/test_{kulfan,
+rotating_mast,box_spars,fit,parameters,assembly}.py`); full fast suite **251 passed / 31
+deselected** (217 → 251). **Why:** `G-1` needs a valid parameterized box-spar/longeron/shell
+assembly that passes geometric fit; it feeds Phase A (OML→aero surface) and Phase S (box-spar
+sections + journal stations→mesh/BCs). **Scope (Article VII honesty):** the box-spar cells'
+**3-D lofting** into the assembly is **deferred** — G.6 ships the OML twin-mast assembly +
+the validated 2-D section set; lofting the cells into spar solids folds into the Phase-S
+mesh. `c_mast` carried as a parameter (placeholder 1.0 m; value is Phase-A `D-4`). Regenerate:
+`just example 54_rotating_wingmast`. (no FEA/eigen this phase — III/headline N/A.)
+
 ## Decisions log
 
 | Decision | Choice |
@@ -1773,6 +1806,7 @@ the original entry under-disclosed the residual `runs/` duplication and the impo
 | Skin role | Load-bearing structural shell (supersedes fairing-only). |
 | Beam layout (early) | Even arc-length spacing; frame-field-driven in Phase F. |
 | Build-out strategy | Thin end-to-end spike (Phases A–C), then deepen (D+). |
+| Phase G geometry (2026-06-16, `R-GG-1…6`) | Parametric twin rotating-wingmast CAD closing `G-1`. Kulfan/CST airfoils via AeroSandbox (NACA-0018 to 1.7e-4); `RotatingMastSpec` is a **new forward module** reusing the audited `ruled` loft/transition/ordering (composition, not WingSpec mutation); **box spars = pragmatic chordwise partition** (≥3 filleted convex cells, longeron void ∝ blend_radius², section-set+loft, no OCC booleans); `check_fit` margin bites on inflation; 13-param table with bounds+increments. `D-5` entasis = **sin-bow centroid offset** (composes with taper). Box-spar **3-D lofting deferred** to the Phase-S mesh (honest de-scope). Example `54`; suite 217→**251**. Feeds Phases A/S. |
 | Phase 0 groundwork (2026-06-16, `R-GND-1…8`) | Typed structural load layer is a **new** `wingmast_design.load_cases` (`CaseCategory`/`StructuralLoadCase`, `serviceability_applies` = the Article-IV gate) — **not** an extension of the shell-beam `DesignParameters`. Constants (`G0/TH/ACCELS/SF/DATUM`) + the FEA `build_sections_from_result` promoted to `src/` **byte-identically** (Article XII); `runs/` rewired. Dinghy `aero.cases` + tube-spar `structural.beam` quarantined off the forward `__all__`s (FROZEN LEGACY banners); `truss/*` = ARCHIVED analysis-only; legacy examples pinned to direct paths (`OUT-4`). `build_assembly(sized_result)` CAD **deferred to Phase G/V** (param-based one already exists). Suite 203→**215 passed**; example `53`. Opens Phases G/A/S/M. |
 | venv shebang fix (2026-06-16) | `just test` was red (45 collection errors) — the `.venv` carried stale `wing_design`→`wingmast_design` rename shebangs (35 scripts) + `pyvenv.cfg prompt`. Fix: `rm -rf .venv && uv sync` (regenerable from lock). Lesson: venvs are not relocatable after a project-dir rename — regenerate, don't copy. |
 | Phase-4 FEA backend | Roll-our-own linear-tet solver in numpy/scipy; promote to sfepy/FEniCSx when anisotropic homogenization matters. |

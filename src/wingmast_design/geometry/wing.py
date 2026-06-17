@@ -145,8 +145,9 @@ def _airfoil_to_circle_polyline(
     diameter: float,
     blend: float,
     n_pts: int,
+    contour: np.ndarray | None = None,
 ) -> np.ndarray:
-    """Polyline that blends a NACA00xx airfoil (blend=0) to a circle (blend=1).
+    """Polyline that blends an airfoil (blend=0) to a circle (blend=1).
 
     The airfoil keeps its native cosine-spaced point distribution. For each
     airfoil point at angle θ_i from the pivot, the corresponding circle point
@@ -156,10 +157,13 @@ def _airfoil_to_circle_polyline(
     high where the airfoil curvature is high (TE and LE), so the loft sees
     consistent, well-sampled sections at every blend value.
 
-    Relies on the airfoil being star-shaped w.r.t. the pivot, which holds for
-    NACA00xx with pivot_frac in roughly [0.05, 0.95].
+    ``contour`` is an optional (N, 2) unit-chord airfoil in the project ordering
+    (e.g. a Kulfan/CST section from `geometry.kulfan`); when ``None`` a NACA00xx of
+    the given ``thickness`` is used (legacy default — callers unchanged). Relies on
+    the section being star-shaped w.r.t. the pivot (holds for NACA00xx / moderate
+    CST sections with pivot_frac in roughly [0.05, 0.95]).
     """
-    airfoil = naca_00xx_coords(thickness, n=n_pts)
+    airfoil = naca_00xx_coords(thickness, n=n_pts) if contour is None else np.asarray(contour, float)
     airfoil = (airfoil - np.array([pivot_frac, 0.0])) * chord
     theta = np.arctan2(airfoil[:, 1], airfoil[:, 0])
     circle = 0.5 * diameter * np.column_stack([np.cos(theta), np.sin(theta)])
@@ -173,14 +177,18 @@ def _section_face(
     diameter: float,
     blend: float,
     n_pts: int,
+    contour: np.ndarray | None = None,
 ):
     """A planar Face whose boundary is a closed periodic spline through the morphed points.
 
     The cosine-spaced airfoil polyline ends with a duplicate at the trailing edge
     (closed_te=True). We drop that duplicate so the periodic spline can close
-    cleanly without a zero-length segment.
+    cleanly without a zero-length segment. ``contour`` (optional) supplies a
+    non-NACA section (e.g. Kulfan/CST) — see `_airfoil_to_circle_polyline`.
     """
-    coords = _airfoil_to_circle_polyline(chord, thickness, pivot_frac, diameter, blend, n_pts)
+    coords = _airfoil_to_circle_polyline(
+        chord, thickness, pivot_frac, diameter, blend, n_pts, contour=contour
+    )
     pts = [(float(x), float(y)) for x, y in coords[:-1]]
     with BuildSketch() as sk:
         with BuildLine():
