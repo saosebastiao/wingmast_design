@@ -15,13 +15,19 @@ from .loads import (
 )
 from .model import build_airplane, build_asb_wing
 from .operational import (
+    OPERATIONAL_SCENARIOS,
+    CeilingKind,
+    HeelingCeiling,
     OperationalLoad,
+    OperationalScenario,
     SailingConditions,
     op1,
     op2,
     operational_load,
     operational_torque_Nm,
+    resolve_operational,
     rm_sensitivity_band,
+    scenario_torque_Nm,
 )
 from .survival import (
     BareMast,
@@ -65,6 +71,12 @@ __all__ = [
     "operational_load",
     "operational_torque_Nm",
     "rm_sensitivity_band",
+    "OPERATIONAL_SCENARIOS",
+    "CeilingKind",
+    "HeelingCeiling",
+    "OperationalScenario",
+    "resolve_operational",
+    "scenario_torque_Nm",
     "BareMast",
     "Q_CAT3",
     "Q_CAT5",

@@ -16,17 +16,20 @@ c_mast breakevens where it flips. This is the aero half of each design case; the
 """
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass
 
 from ..load_cases import CaseCategory
 from .feathering import FeatheringConfig, feathering_verdict
-from .operational import SailingConditions, op1, op2, operational_torque_Nm
+from .operational import (
+    OPERATIONAL_SCENARIOS,
+    OperationalScenario,
+    SailingConditions,
+    op2,
+    resolve_operational,
+    scenario_torque_Nm,
+)
 from .survival import BareMast, surv1_feathered, surv1f_fault, surv2_cat5
-
-#: Reference cambered-wingsail operating point for the operational torque (D-4-dependent).
-_TORQUE_Q_PA = 74.0
-_TORQUE_AREA_M2 = 75.0
-_TORQUE_CHORD_M = 3.2
 
 
 @dataclass(frozen=True)
@@ -48,39 +51,65 @@ class DesignLoadCase:
         return self.category.serviceability_applies
 
 
+#: Survival reserve (FoS ≥ 3.0) and operational reserve (R ≥ 2.0) — stamped here so the
+#: reserve policy is single-sourced (not per-scenario).
+_OP_RESERVE = 2.0
+_SURV_RESERVE = 3.0
+
+
 def design_load_collection(cond: SailingConditions | None = None,
                            mast: BareMast | None = None, *,
                            cfg: FeatheringConfig | None = None,
-                           fault_fos: float = 1.5) -> tuple[DesignLoadCase, ...]:
-    """The OP-1/OP-2/SURV-1/SURV-1f/SURV-2 typed collection, with the governing case flagged."""
+                           fault_fos: float = 1.5,
+                           scenarios: tuple[OperationalScenario, ...] | None = None,
+                           ) -> tuple[DesignLoadCase, ...]:
+    """The typed design-load collection, governing case flagged. Pass / append to ``scenarios``
+    (default `OPERATIONAL_SCENARIOS`) to **add** an operational case — it flows through the whole
+    pipeline and a heavier added case can seize the governing flag (`R-AE-7`)."""
     cond = cond or SailingConditions()
     mast = mast or BareMast()
-    o1, o2 = op1(cond), op2(cond)
-    torque = operational_torque_Nm(_TORQUE_Q_PA, _TORQUE_AREA_M2, _TORQUE_CHORD_M, cond)
-    s1 = surv1_feathered(mast)[1]      # design = upper drag coeff
-    sf = surv1f_fault(mast)[1]
-    s2 = surv2_cat5(mast)[1]
+    scenarios = scenarios if scenarios is not None else OPERATIONAL_SCENARIOS
 
-    verdict = feathering_verdict(cfg, mast=mast, op2_bending_Nm=o2.design_bending_Nm, fault_fos=fault_fos)
-    gov = verdict.governing_case       # "operational" ⇒ OP-2 governs (conditional)
-
-    return (
-        DesignLoadCase("OP-1", CaseCategory.OPERATIONAL, o1.design_bending_Nm, torque,
-                       reserve_factor=2.0, eigen_verify=False, governs=False,
-                       note="50:50 nominal; deflection/twist-governing"),
-        DesignLoadCase("OP-2", CaseCategory.OPERATIONAL, o2.design_bending_Nm, torque,
-                       reserve_factor=2.0, eigen_verify=True, governs=(gov == "operational"),
-                       note="70:30 worst single mast; spar strength + buckling"),
+    op_cases = [
+        DesignLoadCase(s.name, CaseCategory.OPERATIONAL,
+                       resolve_operational(s, cond).design_bending_Nm, scenario_torque_Nm(s, cond),
+                       reserve_factor=_OP_RESERVE, eigen_verify=s.eigen_verify, governs=False,
+                       note=s.note)
+        for s in scenarios
+    ]
+    s1, sf, s2 = surv1_feathered(mast)[1], surv1f_fault(mast)[1], surv2_cat5(mast)[1]
+    surv_cases = [
         DesignLoadCase("SURV-1", CaseCategory.SURVIVAL, s1.bending_Nm, 0.0,
-                       reserve_factor=3.0, eigen_verify=True, governs=False,
+                       reserve_factor=_SURV_RESERVE, eigen_verify=True, governs=False,
                        note="bare mast feathered ~0°; below operational"),
         DesignLoadCase("SURV-1f", CaseCategory.SURVIVAL, sf.bending_Nm, 0.0,
-                       reserve_factor=fault_fos, eigen_verify=True, governs=(gov == "survival_fault"),
+                       reserve_factor=fault_fos, eigen_verify=True, governs=False,
                        note=f"feathering-fault off-axis; reduced FoS {fault_fos} (D-2 reliable-feathering)"),
         DesignLoadCase("SURV-2", CaseCategory.SURVIVAL, s2.bending_Nm, 0.0,
-                       reserve_factor=3.0, eigen_verify=True, governs=False,
+                       reserve_factor=_SURV_RESERVE, eigen_verify=True, governs=False,
                        note="Cat-5 off-axis bound; ultimate sensitivity"),
-    )
+    ]
+    cases = (*op_cases, *surv_cases)
+
+    # The D-2 crossover/breakevens are calibrated against OP-2; keep that wiring. Only the
+    # governing FLAG is generalised to max-bending-among-eligible (so an added case can win).
+    verdict = feathering_verdict(cfg, mast=mast, op2_bending_Nm=op2(cond).design_bending_Nm,
+                                 fault_fos=fault_fos)
+    return _flag_governing(cases, verdict.governing_case, scenarios)
+
+
+def _flag_governing(cases: tuple[DesignLoadCase, ...], verdict: str,
+                    scenarios: tuple[OperationalScenario, ...]) -> tuple[DesignLoadCase, ...]:
+    """Set the single ``governs`` flag from the conditional D-2 verdict: when operational-governed,
+    the heaviest **governs-eligible** operational case wins (magnitude, not position) — so an added
+    scenario can seize it; otherwise the feathering fault (`SURV-1f`) governs."""
+    if verdict == "operational":
+        eligible = {s.name for s in scenarios if s.governs_eligible}
+        op = [c for c in cases if c.category is CaseCategory.OPERATIONAL and c.name in eligible]
+        winner = max(op, key=lambda c: c.design_bending_Nm).name if op else None
+    else:  # survival_fault | locked → the off-axis survival fault is the governing case
+        winner = "SURV-1f"
+    return tuple(dataclasses.replace(c, governs=(c.name == winner)) for c in cases)
 
 
 def governing_case(collection: tuple[DesignLoadCase, ...]) -> DesignLoadCase:

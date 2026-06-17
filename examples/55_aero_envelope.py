@@ -38,6 +38,23 @@ def main() -> None:
     print(f"\n  D-2 (conditional): governs '{v.governing_case}' at central inputs; {v.conditions}")
     print(f"  feathering robustness: stable={v.stable}, Scruton {v.scruton_feathered:.0f} (robust), "
           f"fault FoS {v.fault_fos}")
+
+    # --- repeatable: ADD an operational scenario and re-run the whole pipeline ---
+    from wingmast_design.aero import (
+        OPERATIONAL_SCENARIOS,
+        HeelingCeiling,
+        OperationalScenario,
+    )
+
+    op3 = OperationalScenario("OP-3", split=0.85, ceiling=HeelingCeiling.rm_capped(),
+                              eigen_verify=True, governs_eligible=True, note="example: heavier split")
+    coll2 = design_load_collection(scenarios=(*OPERATIONAL_SCENARIOS, op3))
+    print("\n  + added one scenario (OP-3, split 0.85) — the pipeline re-ran:")
+    for c in coll2:
+        if c.category.value == "operational":
+            print(f"    {c.name:<7}{c.design_bending_Nm / 1e3:>6.0f} kN·m  governs={c.governs}")
+    print(f"    new governing case: {governing_case(coll2).name} (the added case seized it)")
+
     print(f"\nDONE in {time.perf_counter() - t0:.2f} s")
 
 

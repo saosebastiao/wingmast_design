@@ -55,3 +55,53 @@ def test_operational_torque_formula():
     assert abs(static - 74.0 * 75.0 * 3.2 * 0.16) < 1.0
     assert abs(design - 1.5 * static) < 1.0
     assert design > 0.0
+
+
+# --- the extensible operational-scenario framework (R-AE-1/2) ----------------------
+
+def test_registry_op1_op2_match_basis_via_resolver():
+    """op1()/op2() are registry lookups; the RM-capped resolver reproduces basis §3 exactly."""
+    from wingmast_design.aero.operational import OPERATIONAL_SCENARIOS, op1, op2
+
+    assert [s.name for s in OPERATIONAL_SCENARIOS] == ["OP-1", "OP-2"]
+    assert abs(op1().design_bending_Nm - 114.643e3) < 10.0
+    assert abs(op2().design_bending_Nm - 160.5e3) < 10.0
+
+
+def test_q_limited_ceiling_is_min_coupled():
+    """heeling = min(split·RM, split·aero_capacity): the righting moment always caps; a q-limited
+    case binds only when the wind cannot drive the rig to the RM ceiling (Article IV)."""
+    from wingmast_design.aero.operational import (
+        HeelingCeiling,
+        OperationalScenario,
+        resolve_operational,
+    )
+
+    cond = SailingConditions()
+    rm_share_bending = 0.60 * cond.rm_max_Nm / cond.heeling_lever_m * cond.operational_arm_m * cond.daf
+
+    # weak wind (q·area·cl below RM share) ⇒ q-limited, BELOW the RM-capped value
+    weak = OperationalScenario("weak", split=0.60, ceiling=HeelingCeiling.q_limited(150.0, 45.0, 1.1))
+    assert resolve_operational(weak, cond).design_bending_Nm < rm_share_bending
+
+    # strong wind (q·area·cl above RM share) ⇒ equilibrium still binds: identical to RM-capped
+    strong = OperationalScenario("strong", split=0.60, ceiling=HeelingCeiling.q_limited(5000.0, 75.0, 1.5))
+    rm_capped = OperationalScenario("rm", split=0.60, ceiling=HeelingCeiling.rm_capped())
+    assert abs(resolve_operational(strong, cond).design_bending_Nm
+               - resolve_operational(rm_capped, cond).design_bending_Nm) < 1.0
+
+
+def test_per_scenario_daf_and_torque_override():
+    from wingmast_design.aero.operational import (
+        HeelingCeiling,
+        OperationalScenario,
+        resolve_operational,
+        scenario_torque_Nm,
+    )
+
+    base = OperationalScenario("a", split=0.70, ceiling=HeelingCeiling.rm_capped())
+    gusty = dataclasses.replace(base, daf=2.0)
+    assert abs(resolve_operational(gusty).design_bending_Nm
+               - (2.0 / 1.5) * resolve_operational(base).design_bending_Nm) < 1.0
+    # torque carries its own camber operating point
+    assert scenario_torque_Nm(base) > 0.0

@@ -68,3 +68,55 @@ def test_exactly_one_governing_case():
     # a degenerate collection with no governing case is rejected
     with pytest.raises(ValueError):
         governing_case(tuple(dataclasses.replace(c, governs=False) for c in coll))
+
+
+# --- the headline guarantee: ADD an operational scenario and it propagates -----------
+
+def test_added_scenario_seizes_governing():
+    """Append one OperationalScenario → it flows into the collection AND can become the governing
+    case (governing is by magnitude, not hardcoded OP-2). This is the 'repeatable' guarantee."""
+    from wingmast_design.aero.operational import (
+        OPERATIONAL_SCENARIOS,
+        HeelingCeiling,
+        OperationalScenario,
+    )
+
+    op3 = OperationalScenario("OP-3", split=0.85, ceiling=HeelingCeiling.rm_capped(),
+                              eigen_verify=True, governs_eligible=True, note="heavy split")
+    coll = design_load_collection(scenarios=(*OPERATIONAL_SCENARIOS, op3))
+    names = [c.name for c in coll]
+    assert "OP-3" in names                                   # propagated into the collection
+    g = governing_case(coll)
+    assert g.name == "OP-3"                                  # the heavier added case seized governing
+    by = {c.name: c for c in coll}
+    assert g.design_bending_Nm > by["OP-2"].design_bending_Nm
+
+
+def test_added_q_limited_case_below_op2_does_not_govern():
+    """A q-limited reaching case capped below OP-2 is present but does NOT falsely govern."""
+    from wingmast_design.aero.operational import (
+        OPERATIONAL_SCENARIOS,
+        HeelingCeiling,
+        OperationalScenario,
+    )
+
+    reach = OperationalScenario("OP-reach", split=0.60,
+                                ceiling=HeelingCeiling.q_limited(q_Pa=220.0, area_m2=45.0, cl_drive=1.1),
+                                note="reaching, q-limited")
+    coll = design_load_collection(scenarios=(*OPERATIONAL_SCENARIOS, reach))
+    assert "OP-reach" in [c.name for c in coll]
+    assert governing_case(coll).name == "OP-2"               # OP-2 still governs
+
+
+def test_non_eligible_scenario_never_governs():
+    """A heavy scenario flagged governs_eligible=False is sized for but cannot be the governing case."""
+    from wingmast_design.aero.operational import (
+        OPERATIONAL_SCENARIOS,
+        HeelingCeiling,
+        OperationalScenario,
+    )
+
+    heavy = OperationalScenario("OP-X", split=0.95, ceiling=HeelingCeiling.rm_capped(),
+                                governs_eligible=False, note="heavy but not eligible")
+    coll = design_load_collection(scenarios=(*OPERATIONAL_SCENARIOS, heavy))
+    assert governing_case(coll).name == "OP-2"               # OP-X heavier but not eligible
