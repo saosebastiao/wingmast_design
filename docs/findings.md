@@ -1857,6 +1857,19 @@ slot-effect ASB fidelity (the 50:50/70:30 split constants are in `operational.py
 A.7 the typed OP/SURV collection + example (`G-2` deliverable). (analytical; example
 wall-clock pending A.7.)
 
+**A.7 done — the typed design-load collection (`G-2` deliverable) (2026-06-17).**
+`aero/design_cases.py`: `DesignLoadCase` + `design_load_collection()` assemble the five named,
+categorised cases — **OP-1 115 · OP-2 160 (governs) · SURV-1 39 · SURV-1f 471 · SURV-2 883
+kN·m** — each with its `CaseCategory` (Phase-0 typed, operational/survival), reserve (R ≥ 2.0
+op / FoS ≥ 3.0 survival / reduced 1.5 for the feathering fault), the `eigen_verify` flag
+(`R-PERF-4`), and the **governing** flag from the conditional D-2 verdict (OP-2 at central
+inputs; flips to SURV-1f at RM ≤ 161 / c_mast ≥ 1.24 — guarded by a test). The
+serviceability gate (deflection/twist) reads operational-only via `CaseCategory` (Article IV).
+`examples/55_aero_envelope` prints the collection + the governing case + the conditional D-2
+conditions. This is the `G-2` load envelope Phases S/O size against. Full suite 274 → **283**.
+**Remaining Phase-A:** A.2 (tandem-ASB fidelity), A.5 (distributed drag/torsion → Phase-S),
+A.6 (DAF/VIV wiring; VIV settled). (`just example 55_aero_envelope`; <0.01 s.)
+
 **Phase-A adversarial review + fixes (2026-06-17) — 10 defects (0 high, 6 med, 4 low); D-2
 re-framed from "resolved" to "conditionally resolved".** A 27-agent physics review (5
 dimensions) confirmed the D-2 finding **overclaimed** in the same way Phase G's fit validator

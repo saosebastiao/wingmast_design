@@ -44,6 +44,11 @@ from .feathering import (
     restoring_margin_xc,
     scruton_number,
 )
+from .design_cases import (
+    DesignLoadCase,
+    design_load_collection,
+    governing_case,
+)
 
 __all__ = [
     "AeroResult",
@@ -77,4 +82,7 @@ __all__ = [
     "is_stable",
     "restoring_margin_xc",
     "scruton_number",
+    "DesignLoadCase",
+    "design_load_collection",
+    "governing_case",
 ]
