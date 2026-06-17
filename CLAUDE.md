@@ -23,6 +23,8 @@ yacht with **two tandem NACA-0018 wingmasts** (`docs/specification.md`).
   findings and decisions go HERE, in the established house format.
 - `docs/specs/<NN-feature>/` — per-feature detailed specs + plans (spec-driven workflow).
 - `docs/respec_research/` — the raw re-scope research/audit dossier (provenance).
+- `docs/glossary.md` — terms, acronyms & symbols. **Keep current**: when a new term/acronym
+  enters the docs or code, add a one-line entry. (The wingsail ≠ wingmast distinction lives here.)
 
 ## Non-negotiable conventions (from the constitution)
 
