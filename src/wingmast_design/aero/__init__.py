@@ -14,6 +14,36 @@ from .loads import (
     sweep_envelope,
 )
 from .model import build_airplane, build_asb_wing
+from .operational import (
+    OperationalLoad,
+    SailingConditions,
+    op1,
+    op2,
+    operational_load,
+    operational_torque_Nm,
+    rm_sensitivity_band,
+)
+from .survival import (
+    BareMast,
+    Q_CAT3,
+    Q_CAT5,
+    SurvivalLoad,
+    dynamic_pressure,
+    locked_broadside,
+    surv1_feathered,
+    surv1f_fault,
+    surv2_cat5,
+    survival_bending,
+)
+from .feathering import (
+    FeatheringConfig,
+    FeatheringVerdict,
+    crossover_aoa_deg,
+    feathering_verdict,
+    is_stable,
+    restoring_margin_xc,
+    scruton_number,
+)
 
 __all__ = [
     "AeroResult",
@@ -23,4 +53,28 @@ __all__ = [
     "run_case",
     "run_case_lifting_line",
     "sweep_envelope",
+    "OperationalLoad",
+    "SailingConditions",
+    "op1",
+    "op2",
+    "operational_load",
+    "operational_torque_Nm",
+    "rm_sensitivity_band",
+    "BareMast",
+    "Q_CAT3",
+    "Q_CAT5",
+    "SurvivalLoad",
+    "dynamic_pressure",
+    "locked_broadside",
+    "surv1_feathered",
+    "surv1f_fault",
+    "surv2_cat5",
+    "survival_bending",
+    "FeatheringConfig",
+    "FeatheringVerdict",
+    "crossover_aoa_deg",
+    "feathering_verdict",
+    "is_stable",
+    "restoring_margin_xc",
+    "scruton_number",
 ]

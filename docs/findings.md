@@ -1821,6 +1821,42 @@ fore/aft label aliasing removed. **Lesson (Article II/VII):** the original 13 gr
 checked scalar couplings, not polygon *validity* — green suite, wrong properties; the
 adversarial review is what caught the self-intersection. 5 new guard tests added.
 
+### Phase A — Tandem aerodynamics & load envelope (2026-06-16/17)
+
+Detailed spec/plan: `docs/specs/02-tandem-aero-loads/` (`R-AE-1…7`, parents `R-AERO-2`/
+`R-SCN-3/4`/`R-LOAD-1…5`, goal `G-2`, gates `D-1/D-2/D-4`).
+
+**Gate D-2 RESOLVED — operational-governed under the reliable-feathering baseline (2026-06-17).**
+User chose the reliable-feathering stance (size the spar to OP-2; carry SURV-1f as a
+reduced-FoS fault check). The analytical feathering model (`aero/feathering.py`, `R-AE-4`)
+backs it: with the pivot at 0.25c **forward of** the effective AC ~0.35c (trailing vane shifts
+it aft), restoring margin 0.10c → **statically stable** (weathervanes); redundant active+vane
+control holds the steady excursion to **AoA_max ≈ 3°** → the bare-mast lift bending stays
+below OP-2 → **governing case = OPERATIONAL (OP-2 ≈ 160 kN·m)**. **Two honest caveats
+(Article IV):** (1) the **crossover margin is thin** — survival lift overtakes OP-2 at only
+**~3.7° off-axis** (0.7° above the 3° design AoA), so the operational-governed conclusion is
+*sensitive* to feathering quality; (2) the baseline **Scruton number ≈ 4 is LOW** (robust ≳
+10–20) → the slender bare mast is **VIV-lock-in-susceptible** and needs more mass/damping or a
+detuned/smaller section. The model also shows the downside: **lose redundancy** → AoA reaches
+the 12° stop → **survival_fault governs (~471 kN·m, ~3× heavier)**; **static instability**
+(pivot aft of AC, no vane) → **locked broadside (~588 kN·m)**. The verdict is **analytical**
+(`D-AE-d`) — CFD/unsteady-aeroelastic is a flagged follow-up (`OUT-3`). *Action:* the spec's
+`D-2` row updated; `c_mast` (`D-4`) + the real RM curve (`D-1`) stay parameterised.
+
+**A.1/A.3/A.4 done — operational + survival envelopes reproduce basis §3–§4 to the digit.**
+Built (analytical, no FEA, no ASB — `D-AE-c`): **A.1** `aero/operational.py` — the RM-capped
+chain `RM_max → split → ÷lever → ×arm → ×DAF`: **OP-1 = 115, OP-2 = 160 kN·m** (linear RM band
+120→181 over 150–225; `RM_max` the dominant sensitivity, `D-1`). **A.3** `aero/survival.py` —
+bare-mast `q·C·A_mast·arm` on `A_mast = c_mast·span ≈ 22 m²` (NOT the wingsail chord): **SURV-1
+feathered 8–39, SURV-1f fault 392–471, SURV-2 Cat-5 736–883, locked 588 kN·m** — all matching
+the basis bands; **SURV-1 (39) < OP-2 (160)** confirms operational-governed. **A.4** the D-2
+model above. **Verification:** 18 aero tests (`tests/aero/test_{operational,survival,
+feathering}.py`); full fast suite **256 → 274 passed**. **Remaining Phase-A:** A.2 tandem
+slot-effect ASB fidelity (the 50:50/70:30 split constants are in `operational.py`; the 2-wing
+`Airplane` solve is the heavier follow-up), A.5 distributed drag/torsion, A.6 DAF/VIV wiring,
+A.7 the typed OP/SURV collection + example (`G-2` deliverable). (analytical; example
+wall-clock pending A.7.)
+
 ## Decisions log
 
 | Decision | Choice |
@@ -1831,6 +1867,7 @@ adversarial review is what caught the self-intersection. 5 new guard tests added
 | Skin role | Load-bearing structural shell (supersedes fairing-only). |
 | Beam layout (early) | Even arc-length spacing; frame-field-driven in Phase F. |
 | Build-out strategy | Thin end-to-end spike (Phases A–C), then deepen (D+). |
+| Phase A / gate D-2 (2026-06-17, `R-AE-1…7`) | **D-2 RESOLVED:** reliable-feathering baseline → **operational (OP-2 ~160 kN·m) governs**; SURV-1f (~471) carried as a reduced-FoS fault check. Analytical model (`aero/feathering.py`): pivot 0.25c fwd of effective AC 0.35c (vane) → stable, AoA_max ~3°. **Caveats:** thin crossover margin (~3.7°), low Scruton (~4 → VIV-susceptible); lose redundancy → survival_fault, instability → locked. Operational/survival envelopes (`aero/operational.py`/`survival.py`) reproduce basis §3–§4 to the digit. Analytical (`D-AE-c/d`); CFD a flagged follow-up. Suite 256→**274**. Remaining A.2/A.5/A.7. |
 | Phase G geometry (2026-06-16, `R-GG-1…6`) | Parametric twin rotating-wingmast CAD **partially closing `G-1`** (OML assembly + validated 2-D section set; walled 3-D box-spar/shell assembly deferred to Phase S). Kulfan/CST airfoils via AeroSandbox (NACA-0018 to 1.7e-4); `RotatingMastSpec` is a **new forward module** reusing the audited `ruled` loft/transition/ordering (composition, not WingSpec mutation); **box spars = chordwise partition** (≥3 simple-convex filleted cells [tested], longeron void ∝ blend_radius², section-set+loft, no OCC booleans; walls/voids are placeholder *areas*, shell polyline = OML); `check_fit` validates member simplicity + OML containment + web clearance, bites on blend/spar_wall/shell_wall inflation; 15-param table with bounds+increments. `D-5` entasis = **sin-bow loft-axis offset**. Example `54`; suite 217→**251** then +fixes. Feeds Phases A/S. **A 32-agent adversarial review found 18 defects (3 high) — all fixed (addendum).** |
 | Phase 0 groundwork (2026-06-16, `R-GND-1…8`) | Typed structural load layer is a **new** `wingmast_design.load_cases` (`CaseCategory`/`StructuralLoadCase`, `serviceability_applies` = the Article-IV gate) — **not** an extension of the shell-beam `DesignParameters`. Constants (`G0/TH/ACCELS/SF/DATUM`) + the FEA `build_sections_from_result` promoted to `src/` **byte-identically** (Article XII); `runs/` rewired. Dinghy `aero.cases` + tube-spar `structural.beam` quarantined off the forward `__all__`s (FROZEN LEGACY banners); `truss/*` = ARCHIVED analysis-only; legacy examples pinned to direct paths (`OUT-4`). `build_assembly(sized_result)` CAD **deferred to Phase G/V** (param-based one already exists). Suite 203→**215 passed**; example `53`. Opens Phases G/A/S/M. |
 | venv shebang fix (2026-06-16) | `just test` was red (45 collection errors) — the `.venv` carried stale `wing_design`→`wingmast_design` rename shebangs (35 scripts) + `pyvenv.cfg prompt`. Fix: `rm -rf .venv && uv sync` (regenerable from lock). Lesson: venvs are not relocatable after a project-dir rename — regenerate, don't copy. |
