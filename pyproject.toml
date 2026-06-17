@@ -1,0 +1,37 @@
+[project]
+name = "wing-design"
+version = "0.1.0"
+description = "Wing design experiments using build123d"
+readme = "README.md"
+authors = [
+    { name = "Daniel Toone", email = "daniel.toone@gmail.com" }
+]
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "aerosandbox>=4.2.9",
+    "build123d>=0.10.0",
+    "cyipopt>=1.7.0",
+    "gmsh>=4.15.2",
+    "ocp-vscode>=3.4.0",
+    "ortools>=9.15.6755",
+    "scipy>=1.15.3",
+]
+
+[project.scripts]
+wing-design = "wing_design:main"
+
+[build-system]
+requires = ["uv_build>=0.11.16,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+    "sizing: SLSQP/FEA sizing test (slow; runs in the separate CI sizing job, not on every push)",
+]
