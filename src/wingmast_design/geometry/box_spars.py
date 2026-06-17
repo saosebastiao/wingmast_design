@@ -130,8 +130,12 @@ def _cell_outline(upper, lower, x_l, x_r, r_blend, is_le, is_te, n_chord=24):
     lo = np.column_stack([xs, _y_on(lower, xs)])
     # corners: top-left, top-right (web), bottom-right, bottom-left (web)
     out: list = []
-    # top cap left→right
-    out += [up[0]]
+    # top cap left→right. For an internal cell the top-LEFT corner (up[0]) is rounded by the
+    # left-web fillet appended at the END — emitting the sharp up[0] here too would duplicate
+    # the corner and self-cross the outline (the G-review HIGH finding); so emit up[0] only at
+    # the LE cell, where the left side is the nose curve, not a web.
+    if is_le:
+        out += [up[0]]
     out += list(up[1:-1])
     # top-right corner → right web → bottom-right corner (fillet if internal web)
     if is_te:
@@ -168,15 +172,15 @@ def box_spar_sections(oml: np.ndarray, layout: BoxSparLayout) -> SparSection:
 
     channels = []
     void = longeron_void_area(layout.blend_radius)
-    r = layout.blend_radius
+    half = 0.5 * np.sqrt(void)                       # equal-area square half-side
     for xw in webs:
-        # representative channel sections sit at the web↔OML junctions (top & bottom),
-        # where the corner rounding actually leaves the void; each scaled by the blend radius.
-        y_up = float(_y_on(upper, np.array([xw]))[0])
-        y_lo = float(_y_on(lower, np.array([xw]))[0])
+        # `polyline` is a SCHEMATIC equal-area marker centred at the web (area == void_area);
+        # the physical void is split between the top & bottom web↔OML corner junctions. The
+        # load-bearing quantity is `void_area` (the blend-radius coupling), not this outline.
+        y_mid = 0.5 * float(_y_on(upper, np.array([xw]))[0] + _y_on(lower, np.array([xw]))[0])
         poly = np.array([
-            [xw - r, y_up - r], [xw + r, y_up - r], [xw, y_up],   # top junction void
-            [xw - r, y_lo + r], [xw + r, y_lo + r], [xw, y_lo],   # bottom junction void
+            [xw - half, y_mid - half], [xw + half, y_mid - half],
+            [xw + half, y_mid + half], [xw - half, y_mid + half],
         ])
         channels.append(LongeronChannel(x=float(xw), void_area=void, polyline=poly))
 

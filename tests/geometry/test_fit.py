@@ -23,7 +23,29 @@ def test_inflated_blend_radius_fails():
 def test_inflated_shell_wall_fails():
     res = check_fit(RotatingMastSpec(), BoxSparLayout(n_spars=3, shell_wall=0.5))
     assert not res.feasible
-    assert res.binding_reason == "shell_room"
+    assert res.binding_reason == "wall_room"
+
+
+def test_inflated_spar_wall_fails():
+    # R-GG-6 acceptance: an inflated *spar* wall must also bite (not only shell).
+    res = check_fit(RotatingMastSpec(), BoxSparLayout(n_spars=3, spar_wall=0.5))
+    assert not res.feasible
+    assert res.binding_reason == "wall_room"
+
+
+def test_reference_members_are_valid():
+    # R-CON-1 "must not intersect": the validator actually inspects the cell polygons.
+    res = check_fit(RotatingMastSpec(), BoxSparLayout(n_spars=3, blend_radius=0.04))
+    assert res.members_valid
+
+
+def test_simple_polygon_helper_detects_self_intersection():
+    import numpy as np
+
+    from wingmast_design.geometry.fit import _is_simple_polygon
+
+    assert _is_simple_polygon(np.array([[0, 0], [1, 0], [1, 1], [0, 1]]))   # square
+    assert not _is_simple_polygon(np.array([[0, 0], [1, 1], [1, 0], [0, 1]]))  # bowtie
 
 
 def test_binding_station_is_the_thin_tip_for_reference():

@@ -4,8 +4,10 @@ Wraps AeroSandbox's CST (Kulfan) implementation — already a project dependency
 airfoil source supports **arbitrary** shapes, not only NACA sections, while preserving the
 project's closed-contour ordering convention:
 
-    (N, 2), cosine-spaced, traversed **upper-TE -> LE -> lower-TE**, closed (first == last
-    at the TE), LE at the minimum-x index.
+    (N, 2), cosine-spaced, traversed **upper-TE -> LE -> lower-TE**, LE at the minimum-x
+    index. The contour is **open at the TE by ``te_thickness``** (the first/lower-TE and
+    last/upper-TE points coincide only when ``te_thickness == 0``); the consumer
+    (`wing._section_face`) drops the duplicate TE point before a periodic spline.
 
 AeroSandbox `get_kulfan_coordinates` already emits this exact ordering, so the wrapper is
 thin. NACA-0018 is the reference default, reproduced by CST weights **fit** to the project's
@@ -45,7 +47,8 @@ class CSTAirfoil:
     te_thickness: float = 0.0
 
     def coords(self, n_points_per_side: int = 80) -> np.ndarray:
-        """(N, 2) contour in the project ordering (upper-TE -> LE -> lower-TE, closed)."""
+        """(N, 2) contour in the project ordering (upper-TE -> LE -> lower-TE; open at the
+        TE by ``te_thickness`` — the consumer drops the duplicate before a periodic spline)."""
         c = get_kulfan_coordinates(
             lower_weights=np.asarray(self.lower_weights, dtype=float),
             upper_weights=np.asarray(self.upper_weights, dtype=float),

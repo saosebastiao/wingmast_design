@@ -38,6 +38,15 @@ def _default_airfoil() -> CSTAirfoil:
     return naca0018_cst()
 
 
+def _is_star_shaped(centered: np.ndarray, tol: float = 1e-6) -> bool:
+    """A section is star-shaped w.r.t. the origin iff the polar angle is monotonic around
+    the loop (every ray from the origin meets the boundary once) — the precondition the
+    airfoil→circle radial morph (`wing._airfoil_to_circle_polyline`) needs."""
+    th = np.unwrap(np.arctan2(centered[:, 1], centered[:, 0]))
+    d = np.diff(th)
+    return bool(np.all(d >= -tol) or np.all(d <= tol))
+
+
 @dataclass(frozen=True, eq=False)
 class RotatingMastSpec:
     """Parametric rotating-wingmast geometry (one mast). ``eq=False`` — holds CST airfoils
@@ -71,6 +80,13 @@ class RotatingMastSpec:
 
     def _contour(self, frac: float) -> np.ndarray:
         return self.airfoil_at_frac(frac).coords(n_points_per_side=self.n_airfoil_points // 2)
+
+    def sections_star_shaped(self) -> bool:
+        """Root + tip sections are star-shaped w.r.t. the rotation centre — the precondition
+        `build_rotating_mast_solid`'s radial morph needs (holds for moderate sections /
+        rotation_center_xc in the param-table range; arbitrary CST weights may break it)."""
+        pivot = np.array([self.rotation_center_xc, 0.0])
+        return all(_is_star_shaped(self._contour(f) - pivot) for f in (0.0, 1.0))
 
     # --- stock sizing ------------------------------------------------------------------
     @property
@@ -120,8 +136,11 @@ class RotatingMastSpec:
         }
 
     def entasis_offset(self, z: float) -> float:
-        """Convex spanwise bow (chord-direction +X), peaking mid-span, 0 at root/tip and
-        below the root (the stock/transition stay on the straight rotation axis). `D-5`."""
+        """Convex spanwise bow of the **wing loft axis** (the section *origin* shifts +X,
+        i.e. the whole section translates — not just its centroid), peaking mid-span, 0 at
+        root/tip and below the root. The stock + rotation axis stay straight, so the bowed
+        wing is offset from the rotation axis and sweeps a cone on 360° rotation — an
+        acceptable static-shape feature (`D-5`)."""
         if self.entasis_frac == 0.0 or z <= 0.0:
             return 0.0
         f = min(z / self.span, 1.0)
@@ -135,6 +154,12 @@ def build_rotating_mast_solid(spec: RotatingMastSpec):
     carry the blended CST airfoil + entasis offset; the transition morphs the root section
     to the stock circle; the stock is two identical circles between the journals.
     """
+    if not spec.sections_star_shaped():
+        raise ValueError(
+            f"rotating-mast section is not star-shaped w.r.t. the rotation centre "
+            f"(rotation_center_xc={spec.rotation_center_xc}); the airfoil→circle morph "
+            f"requires star-shaped sections — adjust rotation_center_xc or the CST weights."
+        )
     diameter = spec.effective_stock_diameter
     pivot = spec.rotation_center_xc
     n = spec.n_airfoil_points

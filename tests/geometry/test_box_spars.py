@@ -89,6 +89,42 @@ def test_internal_cells_have_blend_curve_corners():
     assert corner_gap(0.06) > corner_gap(0.01) > 0.0
 
 
+def _is_simple(poly: np.ndarray) -> bool:
+    from wingmast_design.geometry.fit import _is_simple_polygon
+
+    return _is_simple_polygon(poly)
+
+
+def _is_convex(poly: np.ndarray) -> bool:
+    signs = []
+    n = len(poly)
+    for i in range(n):
+        a, b, c = poly[i], poly[(i + 1) % n], poly[(i + 2) % n]
+        cr = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0])
+        if abs(cr) > 1e-12:
+            signs.append(cr > 0)
+    return all(s == signs[0] for s in signs)
+
+
+def test_all_cells_are_simple_and_convex():
+    """R-GG-3 / Article V: every box-spar cell is a simple (non-self-intersecting) AND
+    convex polygon, across spanwise stations and spar counts (the G-review HIGH check)."""
+    spec = RotatingMastSpec()
+    import numpy as np
+
+    checked = 0
+    for n_spars in (3, 4, 5):
+        for z in np.linspace(0.0, spec.span, 9):
+            sec = mast_box_spar_sections(
+                spec, float(z), BoxSparLayout(n_spars=n_spars, blend_radius=0.04)
+            )
+            for cell in sec.cells:
+                checked += 1
+                assert _is_simple(cell), f"self-intersecting cell at n={n_spars}, z={z:.1f}"
+                assert _is_convex(cell), f"non-convex cell at n={n_spars}, z={z:.1f}"
+    assert checked == (3 + 4 + 5) * 9
+
+
 def test_outer_shell_is_the_oml():
     sec = _section()
     oml = RotatingMastSpec()._contour(0.0)

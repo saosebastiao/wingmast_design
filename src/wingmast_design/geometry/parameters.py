@@ -37,9 +37,11 @@ class Param:
 GEOMETRY_PARAMS: dict[str, Param] = {
     "span": Param(22.0, 18.0, 26.0, 0.5),
     "root_chord": Param(4.0, 3.0, 5.0, 0.1),
-    "tip_chord": Param(2.4, 1.5, 3.5, 0.1),
+    "tip_chord": Param(2.4, 1.5, 3.5, 0.1),     # taper ratio (tip/root) is DERIVED, not a DV
+    "airfoil_tc": Param(0.18, 0.15, 0.22, 0.01),  # reference t/c; the CST weights are the true DV
     "rotation_center_xc": Param(0.25, 0.20, 0.35, 0.01),
     "entasis_frac": Param(0.0, 0.0, 0.03, 0.005),
+    "stock_diameter": Param(0.70, 0.30, 0.90, 0.01),  # explicit; None ⇒ inscribed @ root
     "transition_length": Param(0.9, 0.5, 1.5, 0.1),
     "stock_length": Param(3.1, 2.5, 4.0, 0.1),
     "mast_spacing": Param(6.0, 4.0, 8.0, 0.25),         # twin-rig axis-to-axis
@@ -59,8 +61,10 @@ class MastGeometryParameters:
     span: float = GEOMETRY_PARAMS["span"].default
     root_chord: float = GEOMETRY_PARAMS["root_chord"].default
     tip_chord: float = GEOMETRY_PARAMS["tip_chord"].default
+    airfoil_tc: float = GEOMETRY_PARAMS["airfoil_tc"].default
     rotation_center_xc: float = GEOMETRY_PARAMS["rotation_center_xc"].default
     entasis_frac: float = GEOMETRY_PARAMS["entasis_frac"].default
+    stock_diameter: float | None = None              # None ⇒ inscribed circle at the root
     transition_length: float = GEOMETRY_PARAMS["transition_length"].default
     stock_length: float = GEOMETRY_PARAMS["stock_length"].default
     mast_spacing: float = GEOMETRY_PARAMS["mast_spacing"].default
@@ -78,10 +82,16 @@ class MastGeometryParameters:
         return cls()
 
     def out_of_bounds(self) -> list[str]:
-        """Names of any scalar parameter outside its (lower, upper) bound (empty = valid)."""
+        """Names of any scalar parameter outside its (lower, upper) bound (empty = valid).
+        Parameters left as ``None`` (e.g. stock_diameter ⇒ inscribed) are skipped."""
         bad = []
         for f in fields(self):
-            if f.name in GEOMETRY_PARAMS and not GEOMETRY_PARAMS[f.name].in_bounds(getattr(self, f.name)):
+            if f.name not in GEOMETRY_PARAMS:
+                continue
+            v = getattr(self, f.name)
+            if v is None:
+                continue
+            if not GEOMETRY_PARAMS[f.name].in_bounds(v):
                 bad.append(f.name)
         return bad
 
@@ -91,6 +101,7 @@ class MastGeometryParameters:
             root_airfoil=self.root_airfoil, tip_airfoil=self.tip_airfoil,
             rotation_center_xc=self.rotation_center_xc, entasis_frac=self.entasis_frac,
             transition_length=self.transition_length, stock_length=self.stock_length,
+            stock_diameter=self.stock_diameter,
         )
 
     def to_box_layout(self) -> BoxSparLayout:

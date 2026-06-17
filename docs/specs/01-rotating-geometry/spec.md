@@ -10,8 +10,12 @@ The parameterized **rotating-wingmast CAD model**: the bottom-to-top anatomy (he
 stock → deck-partners → transition → tapered airfoil wing → tip), arbitrary Kulfan/CST
 airfoils, the manufacturing geometry (≥3 filament-wound hollow **box spars** + inter-spar
 **longeron channels** + filament-wound **outer shell**), and a **geometric-fit** validator —
-producing a valid assembly that passes `R-CON-1` and exports to STL/STEP. This closes goal
-`G-1`.
+producing a valid assembly that passes `R-CON-1` and exports to STL/STEP. This **substantially
+advances `G-1`**: Phase G ships the **OML twin-mast assembly** (exported) + the **validated
+2-D box-spar / longeron / shell section set** + the fit validator; the **walled 3-D
+box-spar/longeron/shell solid assembly** that `G-1`'s text names is **deferred to the Phase-S
+mesh** (the section set is built to feed it). The headline is therefore *partial* `G-1`
+closure, not full.
 
 Phase G builds **geometry only**. It produces the OML + member CAD and the typed parameter
 set (bounds + increments) that Phases A (aero load surface) and S (structural mesh / box-spar
@@ -46,16 +50,24 @@ or compute winding feasibility (those are Phases A/S/M).
   **heel-step** (lower journal) → **stock** (rotating circular section, the bury through the
   hull) → **deck-partners** (upper journal) → **transition** (circular→airfoil) → **wing root**
   → tapered **airfoil wing** → **tip**. It **MUST** carry the **rotational-center foil offset**
-  as a parameter distinct from the section pivot (`R-GEO-2`: rotation axis vs aerodynamic
-  center-of-moment) and support **entasis** (convex spanwise bow, `D-5`). The two journal
-  **stations** (heel + partners) are tagged on the geometry for Phase S. MUST.
+  — the rotation axis position on the chord (`rotation_center_xc`) — as a parameter; this is
+  the geometric rotation axis (the structural inscribed-circle uses the same axis) and is
+  **distinct from the aerodynamic center-of-moment**, a Phase-A quantity (`R-GEO-2`). It
+  **MUST** support **entasis** (convex spanwise bow of the wing loft-axis above the root,
+  `D-5`). The two journal **stations** (heel + partners) are tagged on the geometry for Phase
+  S. MUST.
 - `R-GG-3 (box-spar + longeron-channel + shell geometry)` — *(parent `R-GEO-5`)* The geometry
-  **MUST** represent the prescribed build: **≥3 convex hollow box spars** (LE curve section,
-  ≥1 center section, TE curve section) with **blend-curve corner radii**, slightly tapered for
-  mandrel release; the **inter-spar longeron channels** whose cross-section is **computed from
-  the blend params** (corner radius → void size — the blend-radius→longeron coupling); and the
-  **filament-wound outer shell** that fairs the assembly to the OML. A 3-part **cored** shell
-  (inner/core/outer) is **MAY** (only if Phase-S stiffness forces it — labour cost). MUST.
+  **MUST** represent the prescribed build: **≥3 convex box spars** (LE curve section, ≥1
+  center section, TE curve section) with **blend-curve corner radii**; the **inter-spar
+  longeron channels** whose cross-section is **computed from the blend params** (corner radius
+  → void size — the blend-radius→longeron coupling); and the **outer shell** to the OML.
+  **Phase-G fidelity (honest scope):** the spars are modelled as a **chordwise partition** of
+  the OML section — simple, convex, filleted-corner *cells* (solid bands sampled off the OML
+  surfaces; the spar **wall** and the longeron **void** are placeholder *areas*, not modelled
+  cavities), and the outer-shell polyline **coincides with the OML** (no wall inset). The
+  **walled hollow tubes + inset shell surface + the slight taper-for-release** (manufacturing
+  shape) are part of the **deferred Phase-S/M** build, not Phase G. A 3-part **cored** shell is
+  **MAY** (only if Phase-S stiffness forces it). MUST.
 - `R-GG-4 (geometric-fit constraint)` — *(parent `R-CON-1`)* A validator **MUST** confirm, at
   every spanwise station, that box spars + longerons + shell **fit within the faired OML** and
   members **may touch but MUST NOT intersect** (within a clearance tolerance). It returns a
@@ -80,10 +92,10 @@ cited decision; bounds/increments are engineering ranges, not yet optimised). Pe
 | Exposed wing span (above partners) | 22.0 m | (18.0, 26.0) | 0.5 m | basis §2 (22 m exposed) |
 | Root chord | 4.0 m | (3.0, 5.0) | 0.1 m | basis §2 |
 | Tip chord | 2.4 m | (1.5, 3.5) | 0.1 m | basis §2 (taper 0.6) |
-| Taper ratio (tip/root) | 0.60 | (0.4, 0.9) | 0.05 | derived |
+| Taper ratio (tip/root) | 0.60 | (0.4, 0.9) | 0.05 | **derived** from root/tip chord — not an independent DV / not in `GEOMETRY_PARAMS` |
 | Airfoil t/c (ref) | 0.18 | (0.15, 0.22) | 0.01 | NACA-0018 ref; CST weights are the true DV |
 | Rotational-center foil offset (x/c) | 0.25 | (0.20, 0.35) | 0.01 | basis §2 (axis ~0.25c at cambered CoP) |
-| Entasis (max convex bow / span) | 0.0 | (0.0, 0.03) | 0.005 | `D-5` (clarify vs taper knot) |
+| Entasis (max convex bow / span) | 0.0 | (0.0, 0.03) | 0.005 | `D-5` **resolved**: sin-bow of the loft axis, composes with taper |
 | Stock (base) diameter | inscribed @ root | (0.30, 0.90) m | 0.01 m | basis §2; ≤ inscribed circle at root |
 | Stock length (deck→heel bury) | 3.1 m | (2.5, 4.0) | 0.1 m | basis §2 (≈1/7 above-deck) |
 | Transition length (circle→airfoil) | 0.9 m | (0.5, 1.5) | 0.1 m | existing `WingSpec` |
@@ -137,17 +149,26 @@ sections + journal stations for the structural mesh).
 - `D-GG-d (geometry placeholders for wall/ply)` — spar/shell wall thicknesses are **geometry
   placeholders** here; the true values + integer plies are sized in Phases O/M. Phase G must
   not present a wall as a sized result (Article V honesty).
-- `D-GG-e (extend WingSpec, don't replace)` — keep the `WingSpec` skeleton + `ruled=True` loft
-  + smoothstep transition + the airfoil ordering (all audited *keep*); add the rotating-mast
-  zones, Kulfan airfoil, offset/entasis, and box-spar layout as new fields/builders. Mirrors
-  the Phase-0 `D-GND-b` behaviour-preserving discipline.
+- `D-GG-e (compose, don't mutate the legacy WingSpec)` — reuse the audited `ruled=True` loft +
+  smoothstep transition + airfoil ordering (all *keep*) via a behaviour-preserving `contour=`
+  param on `wing.py`, and add a **new** `RotatingMastSpec` (zones, Kulfan airfoil, offset,
+  entasis, box-spar layout) by **composition** — not by mutating the frozen demo `WingSpec`
+  (mirrors the Phase-0 new-module discipline). Behaviour-preserving for the legacy NACA path
+  (the legacy transition/wingsail tests stay green).
+
+## Resolved during implementation (2026-06-16; see `docs/findings.md`)
+- `D-5 (entasis)` — **RESOLVED:** entasis is a **separate sin-bow offset** of the wing
+  loft-axis (section origin) above the root, peaking mid-span, 0 at root/tip and below the
+  root (the stock/rotation axis stays straight) — **composes with** the chord taper rather
+  than being expressed via taper knots. *(Implication: the bowed wing is offset from the
+  straight rotation axis; on 360° rotation it sweeps — acceptable static geometry.)*
+- `Build strategy` — **RESOLVED:** the box-spar geometry is **section-set + loft** (not
+  watertight booleans) — lighter, OCC-boolean-free, and Phase-S-meshable.
 
 ## Open questions
-- `D-5` **entasis vs taper-knot profile** — is the convex bow a separate spanwise camber of
-  the loft axis, or expressible via the existing `taper_profile` knots? Resolve in `plan.md`
-  step design; record in `docs/findings.md`.
 - `c_mast` value (survival area) — `D-4`/Phase-A; Phase G carries the placeholder (`OUT-5`).
 - Stock/journal exact dimensions (stock length 3.1 m, bury, bearing widths) — seeded from
   basis §2; refine when Phase S sets the bearing-couple model (`R-CON-3`).
-- Does the box-spar geometry need to be **watertight solids** (for boolean/volume) or
-  **section-set + loft** (lighter, for meshing)? A `plan.md` build-strategy choice.
+- The **walled 3-D box-spar/longeron/shell** solid assembly (hollow tubes + inset shell +
+  taper-for-release) — deferred to the Phase-S mesh; Phase G ships the 2-D section set it
+  feeds (`R-GG-3` honest-scope note).

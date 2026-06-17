@@ -59,8 +59,29 @@ def test_contour_ordering_convention():
     # x monotone-decreasing to LE then monotone-increasing to TE
     assert np.all(np.diff(c[: le + 1, 0]) <= 1e-9)
     assert np.all(np.diff(c[le:, 0]) >= -1e-9)
-    # upper side is y>=0 near mid-chord, lower side y<=0
+    # upper y>=0, lower y<=0 near mid-chord — a SYMMETRIC-section property (this test uses
+    # NACA-0018); the general ordering invariants are checked camber-agnostically below.
     assert c[le // 2, 1] >= 0.0 and c[le + (len(c) - le) // 2, 1] <= 0.0
+
+
+def test_cambered_airfoil_preserves_ordering():
+    """R-GG-1's crux is 'arbitrary Kulfan/CST, not only NACA' — the ordering invariants
+    (LE at min-x interior, x monotone down-then-up, TE endpoints) must hold for a strongly
+    cambered section too (independent of the y-sign symmetry)."""
+    base = naca0018_cst()
+    cambered = CSTAirfoil(
+        upper_weights=base.upper_weights + 0.18,   # strong camber + reflex
+        lower_weights=base.lower_weights + 0.10,
+        leading_edge_weight=0.3,
+    )
+    c = cambered.coords(n_points_per_side=120)
+    le = int(np.argmin(c[:, 0]))
+    assert 0 < le < len(c) - 1                                  # LE interior
+    assert abs(c[le, 0]) < 1.0e-6                               # LE at x≈0
+    assert np.allclose(c[0], [1.0, c[0, 1]], atol=1e-9) and abs(c[0, 0] - 1.0) < 2e-3
+    assert abs(c[-1, 0] - 1.0) < 2e-3                           # both ends at the TE
+    assert np.all(np.diff(c[: le + 1, 0]) <= 1e-9)             # x decreasing to LE
+    assert np.all(np.diff(c[le:, 0]) >= -1e-9)                 # x increasing to TE
 
 
 def test_root_tip_blend_is_monotone():

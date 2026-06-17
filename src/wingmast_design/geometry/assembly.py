@@ -22,7 +22,9 @@ def build_wingmast_assembly(params: MastGeometryParameters | None = None) -> Com
     spec = params.to_mast_spec()
     solid = build_rotating_mast_solid(spec)
 
-    fore = solid
+    # Both masts are distinct translated copies (Pos * solid returns a new located shape) —
+    # no aliasing of, or transient label-clobbering on, the shared `solid` (G-review finding).
+    fore = Pos(0.0, 0.0, 0.0) * solid
     fore.label = "mast_fore"
     aft = Pos(params.mast_spacing, 0.0, 0.0) * solid
     aft.label = "mast_aft"
