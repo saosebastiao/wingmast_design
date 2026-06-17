@@ -48,6 +48,28 @@ examples:
     for f in examples/*.py; do echo "--- $f ---"; uv run python "$f" || exit 1; done
 
 # ---------------------------------------------------------------------------
+# Tests
+# ---------------------------------------------------------------------------
+
+# Fast unit suite (excludes the slow `sizing`-marked SLSQP/FEA tests)
+test *args:
+    uv run pytest -m "not sizing" {{args}}
+
+# Full suite including the slow sizing tests (time it — measure-wall-clock convention)
+test-all *args:
+    time uv run pytest {{args}}
+
+# Lint + type-check (astral tooling)
+check:
+    uv run ruff check .
+    uv run ty check
+
+# Auto-format + lint-fix
+fix:
+    uv run ruff format .
+    uv run ruff check --fix .
+
+# ---------------------------------------------------------------------------
 # ParaView 6.x visualization
 # ---------------------------------------------------------------------------
 # Override on the command line if ParaView is installed elsewhere:

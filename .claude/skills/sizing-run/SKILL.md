@@ -11,9 +11,14 @@ description: Use when launching, monitoring, or reporting wingmast_design sizing
   (inherits PYTHONPYCACHEPREFIX; venv-correct).
 - **Always time it:** wrap with `time` or capture Bash duration. The measured
   wall-clock goes in the finding — estimates have run ~10× off.
-- Expected scales (measured): small-problem sizing (n_beams=12, n_levels=6) ≈ 5–10 min;
-  medium wingsail (16×8, maxiter 300, analytic Jacobian) ≈ 1–1.7 h; FD is ~2× slower.
-  Anything ≥ 10 min: run in the background and check on completion — don't block.
+- Scale references below are **shell-beam-era** (single root-clamped wing) and must be
+  **re-measured** for the re-scoped twin rotating-wingmast geometry (box spars + journal
+  BCs + larger design vector change the cost). Old measured points, for order-of-magnitude
+  only: small (n_beams=12, n_levels=6) ≈ 5–10 min; medium (16×8, maxiter 300, analytic
+  Jacobian) ≈ 6 min after the SensCache fix (≈ 1–1.7 h before); FD ~2× slower. The box-spar
+  + longeron design vector is expected to be larger (likely the IPOPT regime).
+- Anything ≥ 10 min: run in the background and check on completion — don't block. Respect
+  the memory-budget cap (CLAUDE.md Article VIII: n_workers=1 on the 32 GiB machine).
 
 ## Before reporting ANY mass number
 

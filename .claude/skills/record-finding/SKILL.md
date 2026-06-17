@@ -32,6 +32,11 @@ Requirements:
 
 `| <Increment name> | <Choice + key numbers + what stays default/opt-in> |`
 
+Cross-reference the plan phase (0/G/A/S/M/O/V) and any spec requirement / decision IDs
+(`R-*`/`D-*`) the work exercises or resolves; if a spec `D-*` or a basis open-question
+(`docs/engineering_basis.md` §9) is now answered, update that row in the spec too.
+**Constitution amendments** are also logged here (bump its semver + state the rationale).
+
 ## 3. Milestone? Export artifacts
 
 If this is a milestone (new headline mass, lever validated, re-baseline): export CAD

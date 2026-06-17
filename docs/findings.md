@@ -6,6 +6,40 @@
 > shell-beam build-out (Phases 1–F, complete). **Append new findings and decisions
 > here**; plan.md holds only the forward plan.
 
+---
+
+## ⟢ RE-SCOPE MARKER (2026-06-16) — pivot to the Oyster-595 twin wingmast
+
+The project pivoted from the single root-clamped shell-beam **wingsail** to a free-standing,
+**fully-rotating twin wingmast** for an Oyster-595-class sailboat (brief:
+`prompts/high_level_idea.md`). New canonical docs: **`docs/constitution.md`** (supreme
+principles), **`docs/specification.md`** (requirements), **`docs/engineering_basis.md`**
+(verified load chain), **`docs/plan.md`** (new forward phases 0/G/A/S/M/O/V). The prior
+forward plan is archived at `docs/archive/plan_shellbeam.md`; the re-scope research/audit
+dossier is `docs/respec_research/respec_basis_audit.json`.
+
+**What this archive still is:** the durable record of shell-beam findings. Lever
+*effectiveness* (percentages, mechanisms) and governing-physics conclusions carry over;
+**absolute masses do NOT** (1021.6 kg op / 1575.3 kg survival were for the 22 m demo wing).
+
+**Engineering basis established** via a 14-agent research workflow + 3 independent
+adversarial recomputes. Key verified corrections (full detail in `engineering_basis.md`):
+RM_max ≈ 200 kN·m central (derived/unpublished, dominant linear sensitivity); the bare-mast
+survival load must use the **full exposed-chord planform**, not a slim strut; and the 150 m²
+parity claim presumes a **cambered** operating section.
+
+**Survival-case correction (user, 2026-06-16) — two iterations:** (1) a *properly feathering*
+bare mast is a **low-drag, near-0°-AoA** scenario, *below* operational — not the high-lift
+figure; the high number is only the off-axis bound for *failed* feathering, and locking is
+not a clear win (locked-broadside is worst). (2) **Two distinct wings:** the *wingsail* (mast
++ deployed soft sail, ~75 m²/mast) drives OPERATIONAL loads; the bare *wingmast* (small area
+`A_mast = c_mast·span`, sail furled) drives SURVIVAL loads — so the survival area is **not**
+the ~70 m² wingsail chord (an earlier over-correction) but the much smaller mast section.
+Net: feathered survival ≈ **10–40 kN·m**, feathering-fault off-axis ≈ **390–470 kN·m** (check
+case), vs operational OP-2 **~160–180 kN·m**. **Operational governs the spar** under reliable
+feathering (assumed via active AoA control + trailing vane). Survival no longer governs.
+Basis §4/§2, spec §2/§4 (SURV-1/1f, R-LOAD-2), D-2, domain skill updated.
+
 ## Headline results
 
 Small wingsail (5 m span, NACA 0018, n_beams=16, n_levels=8) progression:

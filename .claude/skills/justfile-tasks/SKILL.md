@@ -17,6 +17,10 @@ bare `python script.py`. `just --list` shows everything.
 | Run any script | `just py path/to/script.py` |
 | Run a wingmast_design module | `just exec <module>` |
 | IPython shell in venv | `just shell` |
+| Fast unit suite (excl. `sizing`) | `just test [args]` |
+| Full suite incl. slow sizing tests | `just test-all [args]` |
+| Lint + type-check | `just check` |
+| Auto-format + lint-fix | `just fix` |
 | Deps: sync / add / add dev / upgrade | `just sync` / `just add <pkg>` / `just add-dev <pkg>` / `just upgrade` |
 | ParaView interactive | `just view shell_fea [--color region_id]` |
 | ParaView screenshot | `just shot shell_fea [out.png]` |
@@ -24,8 +28,9 @@ bare `python script.py`. `just --list` shows everything.
 | Open ParaView GUI on a file | `just pv exports/shell_fea.vtu` |
 | Clean caches | `just clean` |
 
-Tests have no recipe yet: `uv run pytest` (or `uv run pytest tests/beams -q`).
-ParaView path is a variable — override with `just PV=/path/to/bin view ...`.
+`just test` excludes the slow `sizing`-marked tests; `just test-all` times the full run
+(measure-wall-clock convention). ParaView path is a variable — override with
+`just PV=/path/to/bin view ...`.
 
 ## Adding a recipe
 
