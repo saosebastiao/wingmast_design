@@ -7,7 +7,7 @@ from wingmast_design.geometry.rotating_mast import RotatingMastSpec
 
 
 def test_reference_design_fits():
-    res = check_fit(RotatingMastSpec(), BoxSparLayout(n_spars=3, blend_radius=0.04, shell_wall=0.004))
+    res = check_fit(RotatingMastSpec(), BoxSparLayout(n_spars=3))   # mast-scale defaults
     assert isinstance(res, FitResult)
     assert res.feasible
     assert res.margin > 0.0
@@ -35,7 +35,7 @@ def test_inflated_spar_wall_fails():
 
 def test_reference_members_are_valid():
     # R-CON-1 "must not intersect": the validator actually inspects the cell polygons.
-    res = check_fit(RotatingMastSpec(), BoxSparLayout(n_spars=3, blend_radius=0.04))
+    res = check_fit(RotatingMastSpec(), BoxSparLayout(n_spars=3))
     assert res.members_valid
 
 
@@ -50,7 +50,7 @@ def test_simple_polygon_helper_detects_self_intersection():
 
 def test_binding_station_is_the_thin_tip_for_reference():
     s = RotatingMastSpec()
-    res = check_fit(s, BoxSparLayout(n_spars=3, blend_radius=0.04, shell_wall=0.004))
+    res = check_fit(s, BoxSparLayout(n_spars=3))
     # the tip is the thinnest section → tightest vertical fillet room
     assert abs(res.binding_z - s.span) < 1e-6
     assert res.binding_reason == "fillet_vertical"
@@ -58,7 +58,7 @@ def test_binding_station_is_the_thin_tip_for_reference():
 
 def test_more_spars_tighten_horizontal_room():
     s = RotatingMastSpec()
-    # a blend radius that fits 3 wide bands but not 6 narrow ones
-    layout3 = BoxSparLayout(n_spars=3, blend_radius=0.18, shell_wall=0.004)
-    layout6 = BoxSparLayout(n_spars=6, blend_radius=0.18, shell_wall=0.004)
+    # a mast-scale blend radius that fits 3 wide bands but tightens for 6 narrow ones
+    layout3 = BoxSparLayout(n_spars=3, blend_radius=0.05)
+    layout6 = BoxSparLayout(n_spars=6, blend_radius=0.05)
     assert check_fit(s, layout3).margin > check_fit(s, layout6).margin

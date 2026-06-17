@@ -42,9 +42,11 @@ class BoxSparLayout:
 
     n_spars: int = 3
     web_fracs: tuple[float, ...] | None = None
-    blend_radius: float = 0.04        # corner radius → longeron channel (m)
-    spar_wall: float = 0.006          # geometry placeholder (true value sized in Phase O)
-    shell_wall: float = 0.004         # geometry placeholder
+    # Defaults sized for the bare-WINGMAST section (~0.5–1.0 m chord, ~0.1–0.18 m thick),
+    # NOT the 4 m wingsail. The blend radius + walls are mm-scale for this small section.
+    blend_radius: float = 0.015       # corner radius → longeron channel (m)
+    spar_wall: float = 0.004          # geometry placeholder (true value sized in Phase O)
+    shell_wall: float = 0.003         # geometry placeholder
 
     def web_positions(self, x_le: float, x_te: float) -> np.ndarray:
         """Internal web x-positions (n_spars - 1 of them) across the chord."""

@@ -86,7 +86,8 @@ def test_internal_cells_have_blend_curve_corners():
         return float(np.min(np.hypot(cell[:, 0] - sharp[0], cell[:, 1] - sharp[1])))
 
     # the rounded cell stays further from the sharp corner as the blend radius grows
-    assert corner_gap(0.06) > corner_gap(0.01) > 0.0
+    # (mast-scale radii — the section is ~0.18 m thick)
+    assert corner_gap(0.02) > corner_gap(0.005) > 0.0
 
 
 def _is_simple(poly: np.ndarray) -> bool:

@@ -87,24 +87,31 @@ or compute winding feasibility (those are Phases A/S/M).
 Seeded from `docs/engineering_basis.md` §2 (assumed concept — values marked *TBD* await the
 cited decision; bounds/increments are engineering ranges, not yet optimised). Per mast.
 
+**The chords below are the BARE WINGMAST (the rigid structure we optimise, ~0.5–1.0 m), NOT
+the ~3–4 m wingsail.** The wingsail (mast + deployed soft sail) is the **aerodynamic** surface
+that sets the operational loads (Phase A) — it is an *aero* parameter (~3–4 m chord, basis §2),
+not part of this structural geometry. The mast `root_chord` here **is** the swept bare-mast
+chord (it subsumes the former separate `c_mast`); the survival aero (`aero/survival.py`) uses
+the same mast chord for `A_mast`. (Corrected 2026-06-17 — the geometry was initially built at
+the wingsail chord.)
+
 | Parameter | Default | (lower, upper) | increment | Source / note |
 |---|---|---|---|---|
-| Exposed wing span (above partners) | 22.0 m | (18.0, 26.0) | 0.5 m | basis §2 (22 m exposed) |
-| Root chord | 4.0 m | (3.0, 5.0) | 0.1 m | basis §2 |
-| Tip chord | 2.4 m | (1.5, 3.5) | 0.1 m | basis §2 (taper 0.6) |
-| Taper ratio (tip/root) | 0.60 | (0.4, 0.9) | 0.05 | **derived** from root/tip chord — not an independent DV / not in `GEOMETRY_PARAMS` |
-| Airfoil t/c (ref) | 0.18 | (0.15, 0.22) | 0.01 | NACA-0018 ref; CST weights are the true DV |
-| Rotational-center foil offset (x/c) | 0.25 | (0.20, 0.35) | 0.01 | basis §2 (axis ~0.25c at cambered CoP) |
+| Exposed mast span (above partners) | 22.0 m | (18.0, 26.0) | 0.5 m | basis §2 (= wingsail span) |
+| **Mast** root chord | 1.0 m | (0.5, 1.0) | 0.05 m | bare-mast chord, swept DV (`D-4`); **not** the 4 m wingsail |
+| **Mast** tip chord | 0.6 m | (0.3, 0.7) | 0.05 m | taper ~0.6 |
+| Taper ratio (tip/root) | ~0.60 | (0.4, 0.9) | 0.05 | **derived** from root/tip chord — not an independent DV / not in `GEOMETRY_PARAMS` |
+| Airfoil t/c (ref) | 0.18 | (0.15, 0.30) | 0.01 | NACA-0018 ref; CST weights are the true DV (t/c may grow for structural depth) |
+| Rotational-center foil offset (x/c) | 0.25 | (0.20, 0.35) | 0.01 | basis §2 (axis ~0.25c) |
 | Entasis (max convex bow / span) | 0.0 | (0.0, 0.03) | 0.005 | `D-5` **resolved**: sin-bow of the loft axis, composes with taper |
-| Stock (base) diameter | inscribed @ root | (0.30, 0.90) m | 0.01 m | basis §2; ≤ inscribed circle at root |
-| Stock length (deck→heel bury) | 3.1 m | (2.5, 4.0) | 0.1 m | basis §2 (≈1/7 above-deck) |
+| Stock (base) diameter | inscribed @ root (~0.16 m) | (0.08, 0.20) m | 0.01 m | ≤ inscribed circle at the mast root |
+| Stock length (deck→heel bury) | 3.1 m | (2.5, 4.0) | 0.1 m | basis §2; **hull-set**, not chord-set |
 | Transition length (circle→airfoil) | 0.9 m | (0.5, 1.5) | 0.1 m | existing `WingSpec` |
-| Mast spacing (axis-to-axis) | 6.0 m | (4.0, 8.0) | 0.25 m | basis §2 (1–2c) |
-| Bare-wingmast chord `c_mast` | 1.0 m *(TBD)* | (0.6, 1.6) | 0.1 m | basis §2 / `D-4`; sets A_mast |
+| Mast spacing (axis-to-axis) | 6.0 m | (4.0, 8.0) | 0.25 m | basis §2; **aero-set** (~1.5·wingsail c) |
 | Box-spar count | 3 | (3, 5) | 1 | `R-GEO-5` (LE + center(s) + TE) |
-| Box-spar blend-corner radius | 0.04 m | (0.02, 0.08) | 0.005 m | → longeron-channel void size |
-| Box-spar wall (geometry placeholder) | 0.006 m | (0.003, 0.020) | 0.001 m | true value sized in Phase O |
-| Outer-shell wall (geometry placeholder) | 0.004 m | (0.002, 0.012) | 0.001 m | true value sized in Phase O |
+| Box-spar blend-corner radius | 0.015 m | (0.008, 0.030) | 0.002 m | mast-scale → longeron-channel void |
+| Box-spar wall (geometry placeholder) | 0.004 m | (0.002, 0.010) | 0.001 m | true value sized in Phase O |
+| Outer-shell wall (geometry placeholder) | 0.003 m | (0.002, 0.008) | 0.001 m | true value sized in Phase O |
 
 ## Acceptance
 

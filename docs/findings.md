@@ -1879,6 +1879,28 @@ the operational-governed conclusion stands at central inputs and VIV is *less* o
 first recorded, but the D-2 verdict is honestly conditional on D-1/D-4 and the feathering
 control holding AoA below ~3.7°.** 2 aero tests added (breakeven flips; corrected Scruton).
 
+### Geometry scale correction — wingsail ≠ wingmast (user-caught, 2026-06-17)
+
+**The Phase-G structural geometry was built at the ~4 m WINGSAIL chord, not the bare WINGMAST
+(~0.5–1.0 m) — corrected.** The user noticed the exported `twin_wingmast.stl` "looks just like
+the wingsail from the previous project": `RotatingMastSpec`/`GEOMETRY_PARAMS` used `root_chord
+= 4.0 m` (the basis §2 *wingsail* reference chord), and `c_mast` (the real bare-mast chord) was
+used *only* in the survival aero, never in the structural geometry. So the box spars were
+partitioning a 4 m / 0.72 m-thick section — the **aerodynamic** surface, not the rigid CFRP
+**structure** we optimise. **Two distinct objects** were conflated: the *wingsail* (mast +
+deployed soft sail, ~3–4 m chord — the aero load surface, Phase A) vs the *wingmast* (the bare
+rigid structure alone, ~0.5–1.0 m chord — the box-spar object, Phase G/O). **Fix (user's
+direction: mast chord a swept DV 0.5–1.0 m, scaled NACA-0018):** re-targeted the structural
+geometry to the mast chord — `RotatingMastSpec` root/tip 4.0/2.4 → **1.0/0.6 m**; `GEOMETRY_PARAMS`
+chords + box-spar blend (40 → **15 mm**) / walls (6/4 → **4/3 mm**) / stock (0.70 → **0.16 m
+dia**) rescaled to the small section; the redundant geometry `c_mast` param dropped (`root_chord`
+*is* the mast chord; survival aero uses the same). The mast is now a **slender 22 m × 1 m
+structure (AR ~25)**: export **1.6 m³** (was 25.4), fit FEASIBLE (margin 21 mm). The wingsail
+chord (~3–4 m) becomes an **aero-only** parameter (Phase A tandem solve). **The machinery was
+all correct + parametric — only the fed-in scale was wrong.** Geometry suite green (49); 2 fit/
+box-spar tests rescaled. Spec param table + `rotating_mast` docstring updated. (`just example
+54_rotating_wingmast` regenerates the corrected mast.)
+
 ## Decisions log
 
 | Decision | Choice |
@@ -1889,6 +1911,7 @@ control holding AoA below ~3.7°.** 2 aero tests added (breakeven flips; correct
 | Skin role | Load-bearing structural shell (supersedes fairing-only). |
 | Beam layout (early) | Even arc-length spacing; frame-field-driven in Phase F. |
 | Build-out strategy | Thin end-to-end spike (Phases A–C), then deepen (D+). |
+| Geometry scale: wingsail ≠ wingmast (2026-06-17, user-caught) | The Phase-G structural geometry was built at the **4 m wingsail** chord; the bare **wingmast** structure is **~0.5–1.0 m**. Re-targeted `RotatingMastSpec`/`GEOMETRY_PARAMS` to the mast chord (root/tip 1.0/0.6 m, swept DV 0.5–1.0; box-spar blend 15 mm / walls 4–3 mm / stock 0.16 m dia); dropped the redundant geometry `c_mast`. Mast now slender 22 m × 1 m (AR ~25), export 1.6 m³ (was 25.4). The **wingsail** (~3–4 m) is the **aero** surface (Phase A), not the structure. Machinery unchanged — only the scale was wrong. Geometry suite green. |
 | Phase A / gate D-2 (2026-06-17, `R-AE-1…7`) | **D-2 CONDITIONALLY resolved:** reliable-feathering baseline → **operational (OP-2 ~160 kN·m) governs at central inputs**; SURV-1f (~471) a reduced-FoS fault check. Analytical model (`aero/feathering.py`): stable (pivot 0.25c fwd of effective AC 0.35c via vane); **derived breakevens** — flips to survival_fault for RM ≤ ~161 kN·m (`D-1`) or c_mast ≥ ~1.24 m (`D-4`), and requires steady AoA ≤ crossover ~3.7°. **VIV NOT a feathered concern** (corrected: Scruton ~60 robust using the thickness length-scale; the earlier ~4 was a stock-diameter artifact). Operational/survival envelopes reproduce basis §3–§4 to the digit. Analytical (`D-AE-c/d`); CFD a flagged follow-up. Found by the Phase-A review (10 fixes). Suite 256→**274**. Remaining A.2/A.5/A.6/A.7. |
 | Phase G geometry (2026-06-16, `R-GG-1…6`) | Parametric twin rotating-wingmast CAD **partially closing `G-1`** (OML assembly + validated 2-D section set; walled 3-D box-spar/shell assembly deferred to Phase S). Kulfan/CST airfoils via AeroSandbox (NACA-0018 to 1.7e-4); `RotatingMastSpec` is a **new forward module** reusing the audited `ruled` loft/transition/ordering (composition, not WingSpec mutation); **box spars = chordwise partition** (≥3 simple-convex filleted cells [tested], longeron void ∝ blend_radius², section-set+loft, no OCC booleans; walls/voids are placeholder *areas*, shell polyline = OML); `check_fit` validates member simplicity + OML containment + web clearance, bites on blend/spar_wall/shell_wall inflation; 15-param table with bounds+increments. `D-5` entasis = **sin-bow loft-axis offset**. Example `54`; suite 217→**251** then +fixes. Feeds Phases A/S. **A 32-agent adversarial review found 18 defects (3 high) — all fixed (addendum).** |
 | Phase 0 groundwork (2026-06-16, `R-GND-1…8`) | Typed structural load layer is a **new** `wingmast_design.load_cases` (`CaseCategory`/`StructuralLoadCase`, `serviceability_applies` = the Article-IV gate) — **not** an extension of the shell-beam `DesignParameters`. Constants (`G0/TH/ACCELS/SF/DATUM`) + the FEA `build_sections_from_result` promoted to `src/` **byte-identically** (Article XII); `runs/` rewired. Dinghy `aero.cases` + tube-spar `structural.beam` quarantined off the forward `__all__`s (FROZEN LEGACY banners); `truss/*` = ARCHIVED analysis-only; legacy examples pinned to direct paths (`OUT-4`). `build_assembly(sized_result)` CAD **deferred to Phase G/V** (param-based one already exists). Suite 203→**215 passed**; example `53`. Opens Phases G/A/S/M. |

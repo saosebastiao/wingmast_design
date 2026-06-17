@@ -33,23 +33,25 @@ class Param:
         return self.lower <= value <= self.upper
 
 
-#: Normative parameter table (per mast; basis §2). Keys match `MastGeometryParameters` fields.
+#: Normative parameter table for the bare WINGMAST structure (per mast). The chords are the
+#: rigid mast (~0.5–1.0 m), NOT the ~3–4 m wingsail (the wingsail is the aero surface — an
+#: aero parameter for Phase A, not the structural geometry). `root_chord` IS the swept mast
+#: chord (it replaces the former separate `c_mast`). Keys match `MastGeometryParameters`.
 GEOMETRY_PARAMS: dict[str, Param] = {
-    "span": Param(22.0, 18.0, 26.0, 0.5),
-    "root_chord": Param(4.0, 3.0, 5.0, 0.1),
-    "tip_chord": Param(2.4, 1.5, 3.5, 0.1),     # taper ratio (tip/root) is DERIVED, not a DV
-    "airfoil_tc": Param(0.18, 0.15, 0.22, 0.01),  # reference t/c; the CST weights are the true DV
+    "span": Param(22.0, 18.0, 26.0, 0.5),               # exposed mast span (= wingsail span)
+    "root_chord": Param(1.0, 0.5, 1.0, 0.05),           # bare-mast root chord — the swept DV
+    "tip_chord": Param(0.6, 0.3, 0.7, 0.05),            # mast tip chord (taper ~0.6)
+    "airfoil_tc": Param(0.18, 0.15, 0.30, 0.01),        # ref t/c (CST weights are the true DV)
     "rotation_center_xc": Param(0.25, 0.20, 0.35, 0.01),
     "entasis_frac": Param(0.0, 0.0, 0.03, 0.005),
-    "stock_diameter": Param(0.70, 0.30, 0.90, 0.01),  # explicit; None ⇒ inscribed @ root
+    "stock_diameter": Param(0.16, 0.08, 0.20, 0.01),    # explicit; None ⇒ inscribed @ root
     "transition_length": Param(0.9, 0.5, 1.5, 0.1),
-    "stock_length": Param(3.1, 2.5, 4.0, 0.1),
-    "mast_spacing": Param(6.0, 4.0, 8.0, 0.25),         # twin-rig axis-to-axis
-    "c_mast": Param(1.0, 0.6, 1.6, 0.1),                # bare-wingmast survival chord (TBD)
+    "stock_length": Param(3.1, 2.5, 4.0, 0.1),          # bury (hull-set, not chord-set)
+    "mast_spacing": Param(6.0, 4.0, 8.0, 0.25),         # twin-rig axis-to-axis (aero-set, ~1.5·wingsail c)
     "n_box_spars": Param(3, 3, 5, 1),
-    "blend_radius": Param(0.04, 0.02, 0.08, 0.005),
-    "spar_wall": Param(0.006, 0.003, 0.020, 0.001),     # geometry placeholder (sized in Phase O)
-    "shell_wall": Param(0.004, 0.002, 0.012, 0.001),    # geometry placeholder
+    "blend_radius": Param(0.015, 0.008, 0.030, 0.002),  # mast-scale corner radius → longeron void
+    "spar_wall": Param(0.004, 0.002, 0.010, 0.001),     # geometry placeholder (sized in Phase O)
+    "shell_wall": Param(0.003, 0.002, 0.008, 0.001),    # geometry placeholder
 }
 
 
@@ -68,7 +70,6 @@ class MastGeometryParameters:
     transition_length: float = GEOMETRY_PARAMS["transition_length"].default
     stock_length: float = GEOMETRY_PARAMS["stock_length"].default
     mast_spacing: float = GEOMETRY_PARAMS["mast_spacing"].default
-    c_mast: float = GEOMETRY_PARAMS["c_mast"].default
     n_box_spars: int = int(GEOMETRY_PARAMS["n_box_spars"].default)
     blend_radius: float = GEOMETRY_PARAMS["blend_radius"].default
     spar_wall: float = GEOMETRY_PARAMS["spar_wall"].default

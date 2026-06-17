@@ -1,5 +1,13 @@
 """Rotating wingmast geometry stack (`R-GG-2`, parent `R-GEO-1`/`R-GEO-2`).
 
+**This is the BARE WINGMAST — the rigid CFRP structure we optimise, chord ~0.5–1.0 m — NOT
+the ~3–4 m wingsail (mast + deployed soft sail).** The wingsail is the *aerodynamic* surface
+that sets the operational loads (Phase A); the soft sail wraps around this small mast and
+extends aft. So the chords here are mast-scale (slender: 22 m span / ~1 m chord, AR ~25); a
+section ~0.1–0.18 m thick that the box spars + a ~0.08–0.16 m stock fit inside, sized to carry
+OP-2 (~160 kN·m). (Earlier this geometry was wrongly built at the 4 m wingsail chord — corrected
+2026-06-17 per the user; the wingsail chord is now an aero-only parameter.)
+
 The full bottom-to-top anatomy as named zones with their own Z-extents:
 
     heel-step (lower journal) → stock (rotating circular bury through the hull)
@@ -53,8 +61,11 @@ class RotatingMastSpec:
     (ndarray weights). All lengths in metres."""
 
     span: float = 22.0                       # exposed wing, root (z=0) → tip
-    root_chord: float = 4.0
-    tip_chord: float = 2.4                   # taper ratio 0.6
+    # NB: these are the BARE WINGMAST chords (the rigid CFRP structure, ~0.5–1.0 m), NOT the
+    # ~3–4 m wingsail (mast + deployed soft sail). The wingsail is the *aerodynamic* surface
+    # (Phase A operational loads); the structural object we optimise is this much smaller mast.
+    root_chord: float = 1.0                  # mast root chord (swept DV 0.5–1.0 m)
+    tip_chord: float = 0.6                    # mast tip chord (taper 0.6)
     root_airfoil: CSTAirfoil = field(default_factory=_default_airfoil)
     tip_airfoil: CSTAirfoil = field(default_factory=_default_airfoil)
     rotation_center_xc: float = 0.25         # rotation axis on the chord (x/c) — R-GEO-2
