@@ -1857,6 +1857,28 @@ slot-effect ASB fidelity (the 50:50/70:30 split constants are in `operational.py
 A.7 the typed OP/SURV collection + example (`G-2` deliverable). (analytical; example
 wall-clock pending A.7.)
 
+**Phase-A adversarial review + fixes (2026-06-17) — 10 defects (0 high, 6 med, 4 low); D-2
+re-framed from "resolved" to "conditionally resolved".** A 27-agent physics review (5
+dimensions) confirmed the D-2 finding **overclaimed** in the same way Phase G's fit validator
+did — the verdict was *set by hardcoded assumptions*, not earned. Corrected (suite still green):
+**(1)** the model now exposes its **derived** constraints — operational governs only while the
+steady AoA ≤ the **crossover (~3.7°)**, RM ≥ the **breakeven ~161 kN·m** (`D-1`), and c_mast ≤
+the **breakeven ~1.24 m** (`D-4`); `design_aoa=3°` is re-labelled an **assumed control target**
+(a requirement), and the stability/slope/Scruton are **reported metrics**, not silent verdict
+inputs. So at the **central** RM 200 / c_mast 1.0 operational governs with margin, but it
+**flips to survival_fault at the basis lower RM bracket (≤161 kN·m)** and for **c_mast ≳ 1.24
+m** — both unpinned, so D-2 is *conditional*, not clean. **(2) The VIV caveat was WRONG — a
+length-scale artifact:** the Scruton dimension must be the **feathered cross-stream thickness**
+(`tc·c_mast ≈ 0.18 m`), not the stock diameter (0.7 m) → **Sc ≈ 60 (robust)**, so VIV is **not**
+a feathered-regime concern (it would only bite locked-broadside). **(3)** the operational
+**torque** docstring's "~4.3 kN·m static / 6–9 design" was non-reproducible — corrected to the
+formula's actual ~2.84 static / ~4.3 design at the basis reference inputs, noting the basis §3
+static/design label slip and that 6–9 needs a larger A·c (pinned in A.5). Plus doc-consistency
+fixes (high-level `plan.md` increment numbering; the A.6 omission in the table below). **Net:
+the operational-governed conclusion stands at central inputs and VIV is *less* of a worry than
+first recorded, but the D-2 verdict is honestly conditional on D-1/D-4 and the feathering
+control holding AoA below ~3.7°.** 2 aero tests added (breakeven flips; corrected Scruton).
+
 ## Decisions log
 
 | Decision | Choice |
@@ -1867,7 +1889,7 @@ wall-clock pending A.7.)
 | Skin role | Load-bearing structural shell (supersedes fairing-only). |
 | Beam layout (early) | Even arc-length spacing; frame-field-driven in Phase F. |
 | Build-out strategy | Thin end-to-end spike (Phases A–C), then deepen (D+). |
-| Phase A / gate D-2 (2026-06-17, `R-AE-1…7`) | **D-2 RESOLVED:** reliable-feathering baseline → **operational (OP-2 ~160 kN·m) governs**; SURV-1f (~471) carried as a reduced-FoS fault check. Analytical model (`aero/feathering.py`): pivot 0.25c fwd of effective AC 0.35c (vane) → stable, AoA_max ~3°. **Caveats:** thin crossover margin (~3.7°), low Scruton (~4 → VIV-susceptible); lose redundancy → survival_fault, instability → locked. Operational/survival envelopes (`aero/operational.py`/`survival.py`) reproduce basis §3–§4 to the digit. Analytical (`D-AE-c/d`); CFD a flagged follow-up. Suite 256→**274**. Remaining A.2/A.5/A.7. |
+| Phase A / gate D-2 (2026-06-17, `R-AE-1…7`) | **D-2 CONDITIONALLY resolved:** reliable-feathering baseline → **operational (OP-2 ~160 kN·m) governs at central inputs**; SURV-1f (~471) a reduced-FoS fault check. Analytical model (`aero/feathering.py`): stable (pivot 0.25c fwd of effective AC 0.35c via vane); **derived breakevens** — flips to survival_fault for RM ≤ ~161 kN·m (`D-1`) or c_mast ≥ ~1.24 m (`D-4`), and requires steady AoA ≤ crossover ~3.7°. **VIV NOT a feathered concern** (corrected: Scruton ~60 robust using the thickness length-scale; the earlier ~4 was a stock-diameter artifact). Operational/survival envelopes reproduce basis §3–§4 to the digit. Analytical (`D-AE-c/d`); CFD a flagged follow-up. Found by the Phase-A review (10 fixes). Suite 256→**274**. Remaining A.2/A.5/A.6/A.7. |
 | Phase G geometry (2026-06-16, `R-GG-1…6`) | Parametric twin rotating-wingmast CAD **partially closing `G-1`** (OML assembly + validated 2-D section set; walled 3-D box-spar/shell assembly deferred to Phase S). Kulfan/CST airfoils via AeroSandbox (NACA-0018 to 1.7e-4); `RotatingMastSpec` is a **new forward module** reusing the audited `ruled` loft/transition/ordering (composition, not WingSpec mutation); **box spars = chordwise partition** (≥3 simple-convex filleted cells [tested], longeron void ∝ blend_radius², section-set+loft, no OCC booleans; walls/voids are placeholder *areas*, shell polyline = OML); `check_fit` validates member simplicity + OML containment + web clearance, bites on blend/spar_wall/shell_wall inflation; 15-param table with bounds+increments. `D-5` entasis = **sin-bow loft-axis offset**. Example `54`; suite 217→**251** then +fixes. Feeds Phases A/S. **A 32-agent adversarial review found 18 defects (3 high) — all fixed (addendum).** |
 | Phase 0 groundwork (2026-06-16, `R-GND-1…8`) | Typed structural load layer is a **new** `wingmast_design.load_cases` (`CaseCategory`/`StructuralLoadCase`, `serviceability_applies` = the Article-IV gate) — **not** an extension of the shell-beam `DesignParameters`. Constants (`G0/TH/ACCELS/SF/DATUM`) + the FEA `build_sections_from_result` promoted to `src/` **byte-identically** (Article XII); `runs/` rewired. Dinghy `aero.cases` + tube-spar `structural.beam` quarantined off the forward `__all__`s (FROZEN LEGACY banners); `truss/*` = ARCHIVED analysis-only; legacy examples pinned to direct paths (`OUT-4`). `build_assembly(sized_result)` CAD **deferred to Phase G/V** (param-based one already exists). Suite 203→**215 passed**; example `53`. Opens Phases G/A/S/M. |
 | venv shebang fix (2026-06-16) | `just test` was red (45 collection errors) — the `.venv` carried stale `wing_design`→`wingmast_design` rename shebangs (35 scripts) + `pyvenv.cfg prompt`. Fix: `rm -rf .venv && uv sync` (regenerable from lock). Lesson: venvs are not relocatable after a project-dir rename — regenerate, don't copy. |

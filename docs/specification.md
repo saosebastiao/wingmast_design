@@ -281,13 +281,15 @@ head-to-wind and is the **worst** case if locked broadside. *Action:* the first 
 (plan Phase A gate) is an aeroelastic/vane-dynamics + CFD study to (i) establish the credible
 maximum off-axis AoA the structure must survive and (ii) design the feathering mechanism
 (pivot-vs-AC margin, damping, AoA stops) to minimise it. This is the largest mass lever in
-the project. **RESOLVED (2026-06-17, Phase A `R-AE-4`; analytical baseline — findings.md):**
-the **reliable-feathering baseline** → **operational (OP-2) governs**, with SURV-1f a
-reduced-FoS fault check; model says pivot 0.25c fwd of effective AC 0.35c (vane) is stable at
-AoA_max ≈ 3°. **Open caveats (must hold for the verdict):** the crossover margin is thin
-(survival overtakes OP-2 at ~3.7° off-axis) and the bare-mast Scruton ≈ 4 is low (VIV-
-susceptible); a higher-fidelity CFD/aeroelastic confirmation is a flagged follow-up (basis
-open-q #5).
+the project. **CONDITIONALLY RESOLVED (2026-06-17, Phase A `R-AE-4`; analytical baseline —
+findings.md):** the **reliable-feathering baseline** → **operational (OP-2) governs at central
+inputs**, with SURV-1f a reduced-FoS fault check; model is statically stable (pivot 0.25c fwd
+of effective AC 0.35c via a trailing vane). **The verdict is conditional** — it flips to
+survival-governed for **RM ≤ ~161 kN·m** (`D-1` lower bracket) or **c_mast ≥ ~1.24 m** (`D-4`),
+and requires the feathering control to hold the steady AoA below the **~3.7° crossover** (the
+3° design AoA is an assumed target). **VIV is *not* a feathered-regime concern** (Scruton ≈ 60
+robust at the thickness length scale; an earlier "Sc ≈ 4" was a stock-diameter artifact). A
+higher-fidelity CFD/aeroelastic confirmation remains a flagged follow-up (basis open-q #5).
 
 `D-3` Structural object = the **mast only**; soft sail + halyards = applied loads
 (`OUT-2`).

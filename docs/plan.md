@@ -105,6 +105,13 @@ a recorded finding (Constitution Articles I, VII, XI).
 
 **Goal:** `R-AERO/R-LOAD-*`. *Keep* `aero/loads.py` KJ plumbing; *refactor* `aero/model.py`.
 
+> **Authoritative increment numbering: `docs/specs/02-tandem-aero-loads/plan.md`** (7 steps:
+> A.1 operational · A.2 tandem · A.3 survival · **A.4 feathering/D-2** · A.5 distributed ·
+> A.6 DAF/VIV · A.7 typed collection). The bullets below are the original high-level sketch
+> (6-item, D-2 last) and are superseded by that detailed plan. Also note (Phase-A correction):
+> survival is computed on the **bare-wingmast** planform `A_mast = c_mast·span`, **not** the
+> "full exposed-chord planform" the A.3 sketch below says — see `engineering_basis.md` §4.
+
 - **A.1 Sailboat load model:** apparent-wind triangle, heel attitude, the **righting-moment
   cap** on usable sail force, deck/sea ground-plane image at the root.
 - **A.2 Tandem two-mast slot effect** (`R-SCN-3`, decision Q2 = "model the interaction"):

@@ -79,8 +79,15 @@ def op2(cond: SailingConditions | None = None) -> OperationalLoad:
 
 def operational_torque_Nm(q_Pa: float, area_m2: float, chord_m: float,
                           cond: SailingConditions | None = None, *, daf: bool = True) -> float:
-    """Operational torque about the rotation axis: ``T = q·A·c·|Cm_axis|`` (basis §3 ⇒ ~4.3 kN·m
-    static, ~6–9 kN·m design). Sizes the ±45° torsion plies / twist / rotation bearing."""
+    """Operational torque about the rotation axis: ``T = q·A·c·|Cm_axis|``. Sizes the ±45°
+    torsion plies / twist / rotation bearing.
+
+    The **absolute** value is `D-4`-dependent (the cambered operating area + chord, set in A.5).
+    At the basis reference (q≈74 Pa, A≈75 m², c≈3.2 m) it gives **~2.84 kN·m static → ~4.3 kN·m
+    design** (×DAF). Note the basis §3 line labels ~4.3 as "static" — that is actually the
+    *design* (post-DAF) value; and its "~6–9 kN·m design" band needs a larger A·c (~363, ~1.5×)
+    or a gust q≈104–156 Pa, to be reconciled when A.5 pins the distributed-torsion planform.
+    """
     cond = cond or SailingConditions()
     t_static = q_Pa * area_m2 * chord_m * abs(cond.cm_axis)
     return t_static * (cond.daf if daf else 1.0)
