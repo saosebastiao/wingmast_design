@@ -1,9 +1,9 @@
 import numpy as np
 
-from wing_design.scenario import small_scenario
-from wing_design.beams.shell_model import build_beam_shell_model
-from wing_design.beams.shell_sizing import beam_radius_groups
-from wing_design.beams.layout import chord_symmetrize_weights, stress_weighted_targets
+from wingmast_design.scenario import small_scenario
+from wingmast_design.beams.shell_model import build_beam_shell_model
+from wingmast_design.beams.shell_sizing import beam_radius_groups
+from wingmast_design.beams.layout import chord_symmetrize_weights, stress_weighted_targets
 
 
 def test_symmetrize_is_mirror_symmetric():

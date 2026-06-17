@@ -2,25 +2,25 @@
 import numpy as np
 import pytest
 
-from wing_design.geometry import small_wingsail
-from wing_design.materials.unidir import (
+from wingmast_design.geometry import small_wingsail
+from wingmast_design.materials.unidir import (
     CoreMaterial, PVC_H80, T700_EPOXY, laminate_stiffness, sandwich_D_factor,
 )
-from wing_design.beams.shell_model import build_beam_shell_model
-from wing_design.beams.shell_sizing import beam_radius_groups, skin_areas
-from wing_design.beams.laminate_sizing import (
+from wingmast_design.beams.shell_model import build_beam_shell_model
+from wingmast_design.beams.shell_sizing import beam_radius_groups, skin_areas
+from wingmast_design.beams.laminate_sizing import (
     LaminateSizingConfig,
     laminate_result_is_feasible,
     size_beam_shell_laminate,
 )
-from wing_design.beams.sensitivity import (
+from wingmast_design.beams.sensitivity import (
     DesignSens, grad_core_check, grad_panel_buckling, prepare_sensitivity,
     sandwich_geom_factor,
 )
-from wing_design.structural.beam_shell import solve_beam_shell_laminate_factored
-from wing_design.structural.buckling import panel_buckling_utilization
-from wing_design.structural.frame import BeamSection, _element_rotation
-from wing_design.structural.shell import recover_membrane_stress_C
+from wingmast_design.structural.beam_shell import solve_beam_shell_laminate_factored
+from wingmast_design.structural.buckling import panel_buckling_utilization
+from wingmast_design.structural.frame import BeamSection, _element_rotation
+from wingmast_design.structural.shell import recover_membrane_stress_C
 
 RHO = 1550.0
 SF = 1.5
@@ -123,7 +123,7 @@ def test_grad_panel_buckling_sandwich_matches_fd():
 
 @pytest.mark.parametrize("which", ["wrinkle", "crimp"])
 def test_grad_core_check_matches_fd(which):
-    from wing_design.materials.unidir import CORE_RAMP_M, crimping_stress, wrinkling_stress
+    from wingmast_design.materials.unidir import CORE_RAMP_M, crimping_stress, wrinkling_stress
     m, goe, G, M, beam_len, loads = _case()
     x0 = np.concatenate([np.linspace(0.011, 0.014, G), [0.0015, 1/3, 1/3, 0.006]])
     fac0, _Q = _decode_solve(m, goe, G, beam_len, loads, x0)

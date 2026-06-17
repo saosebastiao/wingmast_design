@@ -1,8 +1,8 @@
 import numpy as np
 
-from wing_design.geometry import small_wingsail
-from wing_design.beams.shell_model import build_beam_shell_model, solve_beam_shell_model
-from wing_design.beams.tip_coupling import tip_clique_elements, solve_beam_shell_tip_coupled
+from wingmast_design.geometry import small_wingsail
+from wingmast_design.beams.shell_model import build_beam_shell_model, solve_beam_shell_model
+from wingmast_design.beams.tip_coupling import tip_clique_elements, solve_beam_shell_tip_coupled
 
 
 def test_clique_element_count():

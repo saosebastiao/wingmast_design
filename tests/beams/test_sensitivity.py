@@ -1,9 +1,9 @@
 import numpy as np
-from wing_design.scenario import small_scenario
-from wing_design.beams.shell_model import build_beam_shell_model
-from wing_design.structural.frame import BeamSection
-from wing_design.materials.unidir import T700_EPOXY, laminate_stiffness
-from wing_design.structural.beam_shell import solve_beam_shell_laminate, solve_beam_shell_laminate_factored
+from wingmast_design.scenario import small_scenario
+from wingmast_design.beams.shell_model import build_beam_shell_model
+from wingmast_design.structural.frame import BeamSection
+from wingmast_design.materials.unidir import T700_EPOXY, laminate_stiffness
+from wingmast_design.structural.beam_shell import solve_beam_shell_laminate, solve_beam_shell_laminate_factored
 
 
 def _case(n_beams=6, n_levels=4):
@@ -32,12 +32,12 @@ def test_factored_solve_matches_spsolve():
 
 
 # --- Task 2: element-stiffness derivative primitives (FD-validated) ---
-from wing_design.structural.frame import local_beam_stiffness
-from wing_design.structural.shell import tri_element_stiffness_laminate
-from wing_design.materials.unidir import (
+from wingmast_design.structural.frame import local_beam_stiffness
+from wingmast_design.structural.shell import tri_element_stiffness_laminate
+from wingmast_design.materials.unidir import (
     reduced_stiffness_Q, transformed_Qbar, laminate_stiffness_offset,
 )
-from wing_design.beams.sensitivity import (
+from wingmast_design.beams.sensitivity import (
     central_diff, dkloc_dr, dke_dAD, dAD_dt, dQeff_df, dAD_df,
 )
 
@@ -114,11 +114,11 @@ def test_dQeff_df_offset():
 
 
 # --- Task 3: adjoint engine + tip deflection/twist gradients (FD-validated) ---
-from wing_design.beams.shell_sizing import beam_radius_groups
-from wing_design.beams.sensitivity import (
+from wingmast_design.beams.shell_sizing import beam_radius_groups
+from wingmast_design.beams.sensitivity import (
     DesignSens, grad_tip_defl, grad_tip_twist,
 )
-from wing_design.structural.frame import _element_rotation
+from wingmast_design.structural.frame import _element_rotation
 
 
 def _adjoint_case():
@@ -222,9 +222,9 @@ def test_grad_defl_twist_match_fd():
 
 
 # --- Task 4: beam von-Mises + Euler buckling gradients (FD-validated) ---
-from wing_design.beams.sensitivity import grad_beam_vm, grad_beam_buckling
-from wing_design.structural.frame import von_mises_per_element
-from wing_design.structural.buckling import beam_euler_utilization
+from wingmast_design.beams.sensitivity import grad_beam_vm, grad_beam_buckling
+from wingmast_design.structural.frame import von_mises_per_element
+from wingmast_design.structural.buckling import beam_euler_utilization
 
 _SIGMA_ALLOW = 6.0e8
 _EULER_K = 1.0
@@ -322,7 +322,7 @@ def _adjoint_small_case():
     band/layup-group dv-index plumbing in the cache is genuinely exercised, not
     just the all-zeros degenerate case.
     """
-    from wing_design.materials.unidir import laminate_stiffness_offset
+    from wingmast_design.materials.unidir import laminate_stiffness_offset
 
     m, group_of_element, G, n, M, beam_lengths, loads = _adjoint_case()
     x0 = np.concatenate([np.linspace(0.011, 0.014, G), [0.0015, 1.0 / 3.0, 1.0 / 3.0]])
@@ -363,7 +363,7 @@ def _adjoint_small_case():
 
 
 def test_cached_lambdaT_dK_x_matches_uncached():
-    from wing_design.beams.sensitivity import (
+    from wingmast_design.beams.sensitivity import (
         prepare_sensitivity, lambdaT_dK_x, lambdaT_dK_x_cached,
     )
     factored, ds = _adjoint_small_case()
@@ -376,11 +376,11 @@ def test_cached_lambdaT_dK_x_matches_uncached():
 
 
 # --- Task 5: skin von-Mises + panel buckling gradients (FD-validated) ---
-from wing_design.beams.sensitivity import grad_skin_vm, grad_panel_buckling
-from wing_design.structural.shell import (
+from wingmast_design.beams.sensitivity import grad_skin_vm, grad_panel_buckling
+from wingmast_design.structural.shell import (
     recover_membrane_stress_C, membrane_von_mises, _triangle_local_frame,
 )
-from wing_design.structural.buckling import panel_buckling_utilization
+from wingmast_design.structural.buckling import panel_buckling_utilization
 
 _SKIN_SIGMA_ALLOW = 6.0e8
 _PANEL_KC = 4.0
@@ -399,7 +399,7 @@ def _tri_areas(m):
 def _build_ds_off(m, group_of_element, G, M, beam_lengths, x, offset_deg):
     ds = _build_ds(m, group_of_element, G, M, beam_lengths, x)
     if offset_deg != 0.0:
-        from wing_design.materials.unidir import laminate_stiffness_offset
+        from wingmast_design.materials.unidir import laminate_stiffness_offset
         t = float(x[G]); f0 = float(x[G + 1]); f45 = float(x[G + 2])
         f90 = 1.0 - f0 - f45
         _A, _D, Qeff = laminate_stiffness_offset(
@@ -412,7 +412,7 @@ def _build_ds_off(m, group_of_element, G, M, beam_lengths, x, offset_deg):
 
 def _decode_solve_off(m, group_of_element, G, beam_lengths, loads, x, offset_deg):
     """Decode + solve, applying a ply-angle datum offset to the laminate."""
-    from wing_design.materials.unidir import laminate_stiffness_offset
+    from wingmast_design.materials.unidir import laminate_stiffness_offset
     r_groups = x[:G]
     t = float(x[G]); f0 = float(x[G + 1]); f45 = float(x[G + 2])
     f90 = 1.0 - f0 - f45
@@ -499,7 +499,7 @@ def _run_panel_buckling(offset_deg, use_strip_widths=False):
     m, group_of_element, G, n, M, beam_lengths, loads = _skin_case()
     if use_strip_widths:
         # V.3b strip mode: b^2 = physical panel width^2 enters where area did.
-        from wing_design.beams.shell_model import skin_panel_widths
+        from wingmast_design.beams.shell_model import skin_panel_widths
         areas = skin_panel_widths(m) ** 2
     else:
         areas = _tri_areas(m)
@@ -553,9 +553,9 @@ def test_grad_panel_buckling_matches_fd_strip_widths():
 
 
 # --- Task 6: per-ply Tsai-Wu skin gradient (FD-validated) ---
-from wing_design.beams.sensitivity import grad_skin_tsai_wu
-from wing_design.materials.failure import laminate_min_strength_ratio_batch
-from wing_design.structural.shell import recover_membrane_strain
+from wingmast_design.beams.sensitivity import grad_skin_tsai_wu
+from wingmast_design.materials.failure import laminate_min_strength_ratio_batch
+from wingmast_design.structural.shell import recover_membrane_strain
 
 _TSAI_SF = 1.5
 

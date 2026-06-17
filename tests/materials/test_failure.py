@@ -1,7 +1,7 @@
 import numpy as np
 
-from wing_design.materials.unidir import T700_EPOXY
-from wing_design.materials.failure import (
+from wingmast_design.materials.unidir import T700_EPOXY
+from wingmast_design.materials.failure import (
     tsai_wu_coefficients, tsai_wu_index, tsai_wu_strength_ratio,
     tsai_wu_strength_ratio_grad,
     ply_strength_ratio, laminate_min_strength_ratio,
@@ -53,7 +53,7 @@ def test_laminate_min_skips_absent_orientations():
 
 
 def test_failure_helpers_exported():
-    import wing_design.materials as m
+    import wingmast_design.materials as m
     for name in ("tsai_wu_index", "tsai_wu_strength_ratio", "tsai_wu_coefficients",
                  "ply_strength_ratio", "laminate_min_strength_ratio"):
         assert hasattr(m, name), name
@@ -64,7 +64,7 @@ def test_batch_matches_scalar():
     M = 20
     eps = rng.normal(scale=1e-3, size=(M, 3))
     offs = rng.uniform(-90.0, 90.0, size=M)
-    from wing_design.materials.failure import laminate_min_strength_ratio_batch
+    from wingmast_design.materials.failure import laminate_min_strength_ratio_batch
     batch = laminate_min_strength_ratio_batch(PLY, eps, f0=0.34, f45=0.33, f90=0.33, offset_deg=offs)
     scalar = np.array([
         laminate_min_strength_ratio(PLY, eps[i], f0=0.34, f45=0.33, f90=0.33, offset_deg=float(offs[i]))
@@ -79,7 +79,7 @@ def test_batch_skips_absent_orientations():
     M = 12
     eps = rng.normal(scale=1e-3, size=(M, 3))
     offs = np.zeros(M)
-    from wing_design.materials.failure import laminate_min_strength_ratio_batch
+    from wingmast_design.materials.failure import laminate_min_strength_ratio_batch
     batch = laminate_min_strength_ratio_batch(PLY, eps, f0=1.0, f45=0.0, f90=0.0, offset_deg=offs)
     scalar = np.array([
         laminate_min_strength_ratio(PLY, eps[i], f0=1.0, f45=0.0, f90=0.0, offset_deg=0.0)
@@ -89,7 +89,7 @@ def test_batch_skips_absent_orientations():
 
 
 def test_batch_handles_zero_and_shear_rows():
-    from wing_design.materials.failure import laminate_min_strength_ratio_batch
+    from wingmast_design.materials.failure import laminate_min_strength_ratio_batch
     eps = np.array([[0.0, 0.0, 0.0], [0.0, 0.0, 1e-3]])
     batch = laminate_min_strength_ratio_batch(PLY, eps, f0=1.0, f45=0.0, f90=0.0, offset_deg=np.zeros(2))
     assert batch[0] >= 1.0e8
@@ -122,7 +122,7 @@ def test_batch_array_fractions_match_per_element():
     f0 = rng.uniform(0.1, 0.6, size=M)
     f45 = rng.uniform(0.1, 0.6, size=M) * (1.0 - f0)
     f90 = 1.0 - f0 - f45
-    from wing_design.materials.failure import laminate_min_strength_ratio_batch, laminate_min_strength_ratio
+    from wingmast_design.materials.failure import laminate_min_strength_ratio_batch, laminate_min_strength_ratio
     batch = laminate_min_strength_ratio_batch(PLY, eps, f0=f0, f45=f45, f90=f90, offset_deg=offs)
     per = np.array([
         laminate_min_strength_ratio(PLY, eps[i], f0=float(f0[i]), f45=float(f45[i]), f90=float(f90[i]),

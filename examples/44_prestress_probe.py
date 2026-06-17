@@ -25,23 +25,23 @@ import time
 
 import numpy as np
 
-from wing_design import medium_scenario
-from wing_design.aero import build_airplane, sweep_envelope
-from wing_design.beams import (
+from wingmast_design import medium_scenario
+from wingmast_design.aero import build_airplane, sweep_envelope
+from wingmast_design.beams import (
     LaminateSizingConfig,
     build_beam_frame,
     build_beam_shell_model,
     project_panels_to_beam_nodes,
     size_beam_shell_laminate,
 )
-from wing_design.beams.laminate_sizing import laminate_result_is_feasible
-from wing_design.beams.shell_model import skin_datum_angles
-from wing_design.beams.shell_sizing import skin_areas, skin_band_map
-from wing_design.materials.unidir import T700_EPOXY, laminate_stiffness, laminate_stiffness_offset
-from wing_design.structural.beam_shell import solve_beam_shell_laminate
-from wing_design.structural.buckling import panel_buckling_utilization
-from wing_design.structural.frame import BeamSection
-from wing_design.structural.shell import recover_membrane_stress_C
+from wingmast_design.beams.laminate_sizing import laminate_result_is_feasible
+from wingmast_design.beams.shell_model import skin_datum_angles
+from wingmast_design.beams.shell_sizing import skin_areas, skin_band_map
+from wingmast_design.materials.unidir import T700_EPOXY, laminate_stiffness, laminate_stiffness_offset
+from wingmast_design.structural.beam_shell import solve_beam_shell_laminate
+from wingmast_design.structural.buckling import panel_buckling_utilization
+from wingmast_design.structural.frame import BeamSection
+from wingmast_design.structural.shell import recover_membrane_stress_C
 
 PRETENSION_MPA = [0.0, 5.0, 10.0, 20.0, 50.0, 100.0]
 SF = 1.5

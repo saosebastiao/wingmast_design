@@ -6,10 +6,10 @@ deflection limits under all DESIGN_CASES, and prints mass + critical dimensions.
 """
 from __future__ import annotations
 
-from wing_design.aero import DESIGN_CASES, build_airplane, sweep_envelope
-from wing_design.geometry import medium_wingsail
-from wing_design.materials import T700_EPOXY
-from wing_design.structural import size_tube_spar
+from wingmast_design.aero import DESIGN_CASES, build_airplane, sweep_envelope
+from wingmast_design.geometry import medium_wingsail
+from wingmast_design.materials import T700_EPOXY
+from wingmast_design.structural import size_tube_spar
 
 
 def main() -> None:

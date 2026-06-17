@@ -1,8 +1,8 @@
 import numpy as np
 
-from wing_design.geometry import small_wingsail
-from wing_design.beams.fea_model import build_beam_frame
-from wing_design.beams.sizing import element_lengths, n_longitudinal, frame_mass, SizingConfig, size_beams
+from wingmast_design.geometry import small_wingsail
+from wingmast_design.beams.fea_model import build_beam_frame
+from wingmast_design.beams.sizing import element_lengths, n_longitudinal, frame_mass, SizingConfig, size_beams
 
 
 def test_n_longitudinal():

@@ -1,15 +1,15 @@
 import numpy as np
 import pytest
 
-from wing_design.scenario import small_scenario
-from wing_design.beams import (
+from wingmast_design.scenario import small_scenario
+from wingmast_design.beams import (
     LaminateSizingConfig, LaminateSizingResult, build_beam_frame, build_beam_shell_model,
     project_panels_to_beam_nodes, size_beam_shell_laminate,
     laminate_design_bounds, laminate_result_is_feasible,
 )
-from wing_design.beams.shell_sizing import beam_radius_groups
-from wing_design.aero import build_airplane, sweep_envelope
-from wing_design.materials.unidir import T700_EPOXY
+from wingmast_design.beams.shell_sizing import beam_radius_groups
+from wingmast_design.aero import build_airplane, sweep_envelope
+from wingmast_design.materials.unidir import T700_EPOXY
 
 
 def _cfg(**kw):
@@ -82,8 +82,8 @@ def test_x0_roundtrip_backward_compat():
     assert np.allclose(a.radii, b.radii) and np.isclose(a.mass_kg, b.mass_kg)
 
 
-import wing_design.beams.laminate_sizing as ls_mod
-from wing_design.beams import size_beam_shell_laminate_multistart, MultiStartResult
+import wingmast_design.beams.laminate_sizing as ls_mod
+from wingmast_design.beams import size_beam_shell_laminate_multistart, MultiStartResult
 
 
 def test_multistart_selects_best_feasible(monkeypatch):
@@ -149,8 +149,8 @@ def test_multistart_random_starts_on_simplex(monkeypatch):
     # Regression: make_start must project random starts onto the f0+f45<=1 simplex using
     # the symmetric group count G (not n). Pre-fix, the slice indexed past the vector and
     # the projection silently no-op'd, leaving off-simplex random starts.
-    import wing_design.beams.laminate_sizing as ls_mod2
-    from wing_design.beams.shell_sizing import beam_radius_groups
+    import wingmast_design.beams.laminate_sizing as ls_mod2
+    from wingmast_design.beams.shell_sizing import beam_radius_groups
     captured = []
 
     def fake(model, loads, config, *, ply, rho, maxiter, ftol, x0=None, panel_pressures=None):
@@ -176,10 +176,10 @@ def test_parallel_multistart_matches_serial():
     # V.0.4: the process-pool map must reproduce the serial map exactly — starts
     # are generated up front from the seed and are independent.
     import numpy as np
-    from wing_design.geometry import small_wingsail
-    from wing_design.materials.unidir import T700_EPOXY
-    from wing_design.beams.shell_model import build_beam_shell_model
-    from wing_design.beams.laminate_sizing import (
+    from wingmast_design.geometry import small_wingsail
+    from wingmast_design.materials.unidir import T700_EPOXY
+    from wingmast_design.beams.shell_model import build_beam_shell_model
+    from wingmast_design.beams.laminate_sizing import (
         LaminateSizingConfig, size_beam_shell_laminate_multistart)
 
     model = build_beam_shell_model(small_wingsail, n_beams=4, n_levels=3)

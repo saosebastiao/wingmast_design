@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from wing_design.aero import DESIGN_CASES, build_airplane, sweep_envelope
-from wing_design.geometry import medium_wingsail
+from wingmast_design.aero import DESIGN_CASES, build_airplane, sweep_envelope
+from wingmast_design.geometry import medium_wingsail
 
 
 def main() -> None:

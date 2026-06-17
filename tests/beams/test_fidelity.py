@@ -1,5 +1,5 @@
-from wing_design.geometry import small_wingsail
-from wing_design.beams.fidelity import spline_surface_error
+from wingmast_design.geometry import small_wingsail
+from wingmast_design.beams.fidelity import spline_surface_error
 
 
 def test_surface_error_decreases_with_more_levels():

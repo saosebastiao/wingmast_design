@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 
-from wing_design.geometry import small_wingsail
-from wing_design.beams.shell_model import build_beam_shell_model
-from wing_design.beams.shell_sizing import skin_areas, skin_band_map, skin_band_areas
+from wingmast_design.geometry import small_wingsail
+from wingmast_design.beams.shell_model import build_beam_shell_model
+from wingmast_design.beams.shell_sizing import skin_areas, skin_band_map, skin_band_areas
 
 
 def _model(n_beams=8, n_levels=6):
@@ -49,7 +49,7 @@ def test_band_areas_sum_to_total():
     assert np.isclose(ba.sum(), skin_areas(m).sum())
 
 
-from wing_design.structural.buckling import panel_buckling_utilization
+from wingmast_design.structural.buckling import panel_buckling_utilization
 
 
 def test_panel_buckling_accepts_array_t():
@@ -68,13 +68,13 @@ def test_panel_buckling_accepts_array_t():
     assert np.isclose(u_thin[1], 0.5 * u_thin[0])
 
 
-from wing_design.scenario import small_scenario
-from wing_design.aero import build_airplane, sweep_envelope
-from wing_design.beams import (
+from wingmast_design.scenario import small_scenario
+from wingmast_design.aero import build_airplane, sweep_envelope
+from wingmast_design.beams import (
     LaminateSizingConfig, build_beam_frame, build_beam_shell_model,
     project_panels_to_beam_nodes, size_beam_shell_laminate,
 )
-from wing_design.materials.unidir import T700_EPOXY
+from wingmast_design.materials.unidir import T700_EPOXY
 
 
 def _scenario_small(n_beams=8, n_levels=5):
@@ -101,7 +101,7 @@ def test_uniform_band_one_is_consistent():
     r = size_beam_shell_laminate(model, loads, cfg, ply=T700_EPOXY, rho=P.rho_kgm3, maxiter=15)
     assert r.t_bands.shape == (1,)
     assert np.isclose(r.t_skin, r.t_bands[0])
-    from wing_design.beams.shell_sizing import skin_areas
+    from wingmast_design.beams.shell_sizing import skin_areas
     assert np.isclose(r.skin_mass_kg, P.rho_kgm3 * r.t_skin * skin_areas(model).sum(), rtol=1e-6)
 
 
@@ -119,13 +119,13 @@ def test_banded_feasible_and_not_heavier():
     assert np.all(ban.t_bands >= band_cfg.t_min - 1e-9)
     assert np.all(ban.t_bands <= band_cfg.t_max + 1e-9)
     assert ban.mass_kg <= uni.mass_kg + 0.25
-    from wing_design.beams.shell_sizing import skin_areas, skin_band_map
+    from wingmast_design.beams.shell_sizing import skin_areas, skin_band_map
     bm = skin_band_map(model, 4)
     t_tri = ban.t_bands[bm]
     assert np.isclose(ban.skin_mass_kg, P.rho_kgm3 * np.sum(t_tri * skin_areas(model)), rtol=1e-6)
 
 
 def test_band_helpers_exported():
-    import wing_design.beams as b
+    import wingmast_design.beams as b
     assert hasattr(b, "skin_band_map")
     assert hasattr(b, "skin_band_areas")

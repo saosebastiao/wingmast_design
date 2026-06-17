@@ -4,9 +4,9 @@ pytestmark = pytest.mark.sizing  # full SLSQP sizing runs (measured 15-99 s each
 
 import numpy as np
 
-from wing_design.scenario import small_scenario
-from wing_design.beams.shell_model import build_beam_shell_model
-from wing_design.beams.shell_sizing import beam_radius_groups
+from wingmast_design.scenario import small_scenario
+from wingmast_design.beams.shell_model import build_beam_shell_model
+from wingmast_design.beams.shell_sizing import beam_radius_groups
 
 
 def _model(n_beams=8, n_levels=5, arc_fractions=None):
@@ -44,13 +44,13 @@ def test_asymmetric_placement_falls_back():
     assert np.array_equal(g, np.arange(n))
 
 
-from wing_design.scenario import small_scenario as _ss
-from wing_design.beams import (
+from wingmast_design.scenario import small_scenario as _ss
+from wingmast_design.beams import (
     LaminateSizingConfig, build_beam_frame, build_beam_shell_model as _bm,
     project_panels_to_beam_nodes, size_beam_shell_laminate,
 )
-from wing_design.aero import build_airplane, sweep_envelope
-from wing_design.materials.unidir import T700_EPOXY
+from wingmast_design.aero import build_airplane, sweep_envelope
+from wingmast_design.materials.unidir import T700_EPOXY
 
 
 def _sized(n_beams=8, n_levels=5, **cfgkw):

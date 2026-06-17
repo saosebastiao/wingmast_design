@@ -1,14 +1,14 @@
 import numpy as np
 
-from wing_design.geometry import small_wingsail
-from wing_design.aero.loads import PanelLoads
-from wing_design.beams.fea_model import (
+from wingmast_design.geometry import small_wingsail
+from wingmast_design.aero.loads import PanelLoads
+from wingmast_design.beams.fea_model import (
     build_beam_frame,
     project_panels_to_beam_nodes,
     solve_beam_frame,
     summarize_frame,
 )
-from wing_design.structural.projection import R_GEOM_FROM_AERO
+from wingmast_design.structural.projection import R_GEOM_FROM_AERO
 
 
 def test_frame_topology():

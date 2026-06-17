@@ -10,9 +10,9 @@ from __future__ import annotations
 
 import numpy as np
 
-from wing_design import medium_scenario
-from wing_design.aero import build_airplane, sweep_envelope
-from wing_design.beams import (
+from wingmast_design import medium_scenario
+from wingmast_design.aero import build_airplane, sweep_envelope
+from wingmast_design.beams import (
     BeamShellSizingConfig,
     beam_lengths,
     build_beam_frame,
@@ -22,9 +22,9 @@ from wing_design.beams import (
     size_beam_shell,
     skin_areas,
 )
-from wing_design.structural import solve_beam_shell, recover_membrane_stress, membrane_von_mises
-from wing_design.structural.frame import BeamSection, von_mises_per_element
-from wing_design.structural.buckling import beam_euler_utilization, panel_buckling_utilization
+from wingmast_design.structural import solve_beam_shell, recover_membrane_stress, membrane_von_mises
+from wingmast_design.structural.frame import BeamSection, von_mises_per_element
+from wingmast_design.structural.buckling import beam_euler_utilization, panel_buckling_utilization
 
 
 def verify(model, radii, t_skin, load_arrays, sf_buck):

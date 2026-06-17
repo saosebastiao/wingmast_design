@@ -10,8 +10,8 @@ from pathlib import Path
 
 from build123d import export_step
 
-from wing_design import medium_scenario, show_in_viewer
-from wing_design.beams import build_assembly
+from wingmast_design import medium_scenario, show_in_viewer
+from wingmast_design.beams import build_assembly
 
 
 def main() -> None:

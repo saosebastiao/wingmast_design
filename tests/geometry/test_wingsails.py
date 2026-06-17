@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from wing_design.geometry import small_wingsail, medium_wingsail, large_wingsail
-from wing_design.geometry.wing import WingSpec
+from wingmast_design.geometry import small_wingsail, medium_wingsail, large_wingsail
+from wingmast_design.geometry.wing import WingSpec
 
 
 def _ar(w):

@@ -1,6 +1,6 @@
 import numpy as np
 
-from wing_design.materials.unidir import T700_EPOXY, reduced_stiffness_Q, laminate_stiffness
+from wingmast_design.materials.unidir import T700_EPOXY, reduced_stiffness_Q, laminate_stiffness
 
 
 def test_Q_symmetric_and_positive():
@@ -26,7 +26,7 @@ def test_pm45_maximizes_shear_stiffness():
 
 
 def test_transformed_qbar_known_angles():
-    from wing_design.materials.unidir import transformed_Qbar
+    from wingmast_design.materials.unidir import transformed_Qbar
     Q = reduced_stiffness_Q(T700_EPOXY)
     scale = Q[0, 0]
     # 0 deg leaves Q unchanged; 90 deg swaps 11<->22 with no shear coupling.
@@ -46,7 +46,7 @@ def test_transformed_qbar_known_angles():
 
 
 def test_laminate_offset_zero_matches_base():
-    from wing_design.materials.unidir import laminate_stiffness, laminate_stiffness_offset
+    from wingmast_design.materials.unidir import laminate_stiffness, laminate_stiffness_offset
     a0 = laminate_stiffness(T700_EPOXY, f0=0.5, f45=0.3, f90=0.2, thickness=0.003)
     a1 = laminate_stiffness_offset(T700_EPOXY, f0=0.5, f45=0.3, f90=0.2, thickness=0.003, offset_deg=0.0)
     for m0, m1 in zip(a0, a1):
@@ -54,7 +54,7 @@ def test_laminate_offset_zero_matches_base():
 
 
 def test_laminate_offset_90_swaps_axial():
-    from wing_design.materials.unidir import laminate_stiffness, laminate_stiffness_offset
+    from wingmast_design.materials.unidir import laminate_stiffness, laminate_stiffness_offset
     A_base, _, _ = laminate_stiffness(T700_EPOXY, f0=1.0, f45=0.0, f90=0.0, thickness=0.003)
     A_off, _, _ = laminate_stiffness_offset(T700_EPOXY, f0=1.0, f45=0.0, f90=0.0, thickness=0.003, offset_deg=90.0)
     assert abs(A_off[0, 0] - A_base[1, 1]) < 1e-3 * A_base[0, 0]

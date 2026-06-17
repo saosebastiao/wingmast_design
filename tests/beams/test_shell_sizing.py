@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 
-from wing_design.geometry import small_wingsail
-from wing_design.beams.shell_model import build_beam_shell_model
-from wing_design.beams.shell_sizing import beam_lengths, skin_areas, beam_mass, skin_mass, BeamShellSizingConfig, size_beam_shell
+from wingmast_design.geometry import small_wingsail
+from wingmast_design.beams.shell_model import build_beam_shell_model
+from wingmast_design.beams.shell_sizing import beam_lengths, skin_areas, beam_mass, skin_mass, BeamShellSizingConfig, size_beam_shell
 
 
 def test_beam_lengths_match_geometry():

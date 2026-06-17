@@ -15,7 +15,7 @@ bare `python script.py`. `just --list` shows everything.
 |---|---|
 | Run an example | `just example 39_tip_gusset` |
 | Run any script | `just py path/to/script.py` |
-| Run a wing_design module | `just exec <module>` |
+| Run a wingmast_design module | `just exec <module>` |
 | IPython shell in venv | `just shell` |
 | Deps: sync / add / add dev / upgrade | `just sync` / `just add <pkg>` / `just add-dev <pkg>` / `just upgrade` |
 | ParaView interactive | `just view shell_fea [--color region_id]` |

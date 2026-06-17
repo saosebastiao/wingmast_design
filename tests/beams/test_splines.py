@@ -1,7 +1,7 @@
 import numpy as np
 
-from wing_design.geometry import small_wingsail
-from wing_design.beams.splines import (
+from wingmast_design.geometry import small_wingsail
+from wingmast_design.beams.splines import (
     default_z_levels,
     form_beam_grid,
     fit_beam_splines,

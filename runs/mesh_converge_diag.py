@@ -40,11 +40,11 @@ from pathlib import Path
 
 import numpy as np
 
-from wing_design import medium_scenario
-from wing_design.aero import build_airplane, sweep_envelope
-from wing_design.beams import build_beam_shell_model, resample_segment_radii
-from wing_design.beams.fea_model import project_panels_to_skin
-from wing_design.beams.shell_sizing import beam_radius_groups
+from wingmast_design import medium_scenario
+from wingmast_design.aero import build_airplane, sweep_envelope
+from wingmast_design.beams import build_beam_shell_model, resample_segment_radii
+from wingmast_design.beams.fea_model import project_panels_to_skin
+from wingmast_design.beams.shell_sizing import beam_radius_groups
 
 # reuse the exact verification machinery (no-slam ACCELS, eigen_worst, sections)
 import chain_rebuild as cr

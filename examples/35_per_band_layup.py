@@ -8,16 +8,16 @@ layup + thickness taper and the mass delta. FEA-only.
 """
 from __future__ import annotations
 
-from wing_design import medium_scenario
-from wing_design.aero import build_airplane, sweep_envelope
-from wing_design.beams import (
+from wingmast_design import medium_scenario
+from wingmast_design.aero import build_airplane, sweep_envelope
+from wingmast_design.beams import (
     LaminateSizingConfig,
     build_beam_frame,
     build_beam_shell_model,
     project_panels_to_beam_nodes,
     size_beam_shell_laminate,
 )
-from wing_design.materials.unidir import T700_EPOXY
+from wingmast_design.materials.unidir import T700_EPOXY
 
 
 def main() -> None:

@@ -1,15 +1,15 @@
 import numpy as np
 
-from wing_design.geometry import small_wingsail, medium_wingsail
-from wing_design.beams.fea_model import build_beam_frame, project_panels_to_beam_nodes, solve_beam_frame
-from wing_design.aero.loads import PanelLoads
-from wing_design.beams.shell_model import (
+from wingmast_design.geometry import small_wingsail, medium_wingsail
+from wingmast_design.beams.fea_model import build_beam_frame, project_panels_to_beam_nodes, solve_beam_frame
+from wingmast_design.aero.loads import PanelLoads
+from wingmast_design.beams.shell_model import (
     skin_triangles,
     build_beam_shell_model,
     solve_beam_shell_model,
     braced_segment_mask,
 )
-from wing_design.beams.layout import stress_weighted_targets
+from wingmast_design.beams.layout import stress_weighted_targets
 
 
 def test_skin_triangulation_counts_and_validity():
@@ -58,7 +58,7 @@ def test_skin_stiffer_than_ring_frame():
 
 
 def test_skin_datum_angles_shape_and_range():
-    from wing_design.beams.shell_model import skin_datum_angles
+    from wingmast_design.beams.shell_model import skin_datum_angles
     spec = small_wingsail
     model = build_beam_shell_model(spec, n_beams=8, n_levels=5)
     ang = skin_datum_angles(model, datum_dir=(0.0, 0.0, 1.0))

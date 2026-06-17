@@ -1,10 +1,10 @@
 import numpy as np
 import pytest
 
-from wing_design.geometry import small_wingsail
-from wing_design.materials.unidir import T700_EPOXY
-from wing_design.beams.shell_model import build_beam_shell_model
-from wing_design.beams.laminate_sizing import LaminateSizingConfig, size_beam_shell_laminate
+from wingmast_design.geometry import small_wingsail
+from wingmast_design.materials.unidir import T700_EPOXY
+from wingmast_design.beams.shell_model import build_beam_shell_model
+from wingmast_design.beams.laminate_sizing import LaminateSizingConfig, size_beam_shell_laminate
 
 
 def test_clt_cosizing_feasible_and_valid_fractions():
@@ -103,8 +103,8 @@ def test_design_vector_from_result_roundtrip():
     # Warm-start helper: rebuild x from a result and reseed — including across a
     # feature-chain step that ADDS blocks (tube/hollow/sandwich) the prior
     # result lacks (those fall back to cold defaults).
-    from wing_design.materials.unidir import PVC_H80
-    from wing_design.beams.laminate_sizing import design_vector_from_result
+    from wingmast_design.materials.unidir import PVC_H80
+    from wingmast_design.beams.laminate_sizing import design_vector_from_result
 
     spec = small_wingsail
     cfg = LaminateSizingConfig(
@@ -143,12 +143,12 @@ def test_design_vector_from_result_roundtrip():
 def test_braced_cold_start_runs_without_length_mismatch():
     # Smoke test: braced cold-start (x0=None) must not crash with a length mismatch.
     # Uses small_wingsail + small_scenario() so it stays fast (~few seconds).
-    from wing_design.geometry import small_wingsail
-    from wing_design.beams.shell_model import build_beam_shell_model
-    from wing_design.beams.fea_model import project_panels_to_skin
-    from wing_design.aero import build_airplane, sweep_envelope
-    from wing_design import small_scenario
-    from wing_design.beams.laminate_sizing import LaminateSizingConfig, size_beam_shell_laminate
+    from wingmast_design.geometry import small_wingsail
+    from wingmast_design.beams.shell_model import build_beam_shell_model
+    from wingmast_design.beams.fea_model import project_panels_to_skin
+    from wingmast_design.aero import build_airplane, sweep_envelope
+    from wingmast_design import small_scenario
+    from wingmast_design.beams.laminate_sizing import LaminateSizingConfig, size_beam_shell_laminate
     P = small_scenario()
     model = build_beam_shell_model(small_wingsail, n_beams=4, n_levels=3,
                                    lateral_bracing=True)
@@ -170,12 +170,12 @@ def test_braced_solve_includes_brace_mass_in_total():
     # Uses the same tiny fixture as test_braced_cold_start_runs_without_length_mismatch
     # so it stays fast (~seconds).
     import numpy as np
-    from wing_design.geometry import small_wingsail
-    from wing_design.beams.shell_model import build_beam_shell_model
-    from wing_design.beams.fea_model import project_panels_to_skin
-    from wing_design.aero import build_airplane, sweep_envelope
-    from wing_design import small_scenario
-    from wing_design.beams.laminate_sizing import LaminateSizingConfig, size_beam_shell_laminate
+    from wingmast_design.geometry import small_wingsail
+    from wingmast_design.beams.shell_model import build_beam_shell_model
+    from wingmast_design.beams.fea_model import project_panels_to_skin
+    from wingmast_design.aero import build_airplane, sweep_envelope
+    from wingmast_design import small_scenario
+    from wingmast_design.beams.laminate_sizing import LaminateSizingConfig, size_beam_shell_laminate
     P = small_scenario()
     model = build_beam_shell_model(small_wingsail, n_beams=4, n_levels=3,
                                    lateral_bracing=True)
@@ -201,9 +201,9 @@ def test_braced_solve_includes_brace_mass_in_total():
 
 def test_brace_radius_block_present_and_bounded():
     import numpy as np
-    from wing_design.geometry import medium_wingsail
-    from wing_design.beams.shell_model import build_beam_shell_model
-    from wing_design.beams.laminate_sizing import LaminateSizingConfig, laminate_design_bounds
+    from wingmast_design.geometry import medium_wingsail
+    from wingmast_design.beams.shell_model import build_beam_shell_model
+    from wingmast_design.beams.laminate_sizing import LaminateSizingConfig, laminate_design_bounds
     m = build_beam_shell_model(medium_wingsail, n_beams=8, n_levels=6, lateral_bracing=True)
     cfg = LaminateSizingConfig(
         sigma_allow_Pa=2.0e8, tip_defl_max_m=0.5, tip_twist_max_deg=5.0,
@@ -218,9 +218,9 @@ def test_brace_radius_block_present_and_bounded():
 
 def test_brace_mass_and_objective_gradient_fd():
     import numpy as np
-    from wing_design.geometry import medium_wingsail
-    from wing_design.beams.shell_model import build_beam_shell_model
-    from wing_design.beams.laminate_sizing import (
+    from wingmast_design.geometry import medium_wingsail
+    from wingmast_design.beams.shell_model import build_beam_shell_model
+    from wingmast_design.beams.laminate_sizing import (
         LaminateSizingConfig, laminate_design_bounds, _objective_and_grad_for_test)
     P_rho = 1600.0
     m = build_beam_shell_model(medium_wingsail, n_beams=8, n_levels=5, lateral_bracing=True)
@@ -242,10 +242,10 @@ def test_no_separate_brace_vm_constraint():
     # element vector already spans the brace ring elements). There must be NO
     # separate brace_vm / brace_vm_ks constraint (the redundant one from
     # commit 0b20976 was removed).
-    from wing_design.geometry import small_wingsail
-    from wing_design import small_scenario
-    from wing_design.beams.shell_model import build_beam_shell_model
-    from wing_design.beams.laminate_sizing import (
+    from wingmast_design.geometry import small_wingsail
+    from wingmast_design import small_scenario
+    from wingmast_design.beams.shell_model import build_beam_shell_model
+    from wingmast_design.beams.laminate_sizing import (
         LaminateSizingConfig, _constraint_names_for_test)
     P = small_scenario()
     model = build_beam_shell_model(small_wingsail, n_beams=6, n_levels=4,
@@ -266,15 +266,15 @@ def test_no_separate_brace_vm_constraint():
 
 def test_design_vector_from_result_brace_roundtrip():
     import numpy as np
-    from wing_design.geometry import small_wingsail
-    from wing_design import small_scenario
-    from wing_design.beams.shell_model import build_beam_shell_model
-    from wing_design.beams.fea_model import project_panels_to_skin
-    from wing_design.aero import build_airplane, sweep_envelope
-    from wing_design.beams.laminate_sizing import (
+    from wingmast_design.geometry import small_wingsail
+    from wingmast_design import small_scenario
+    from wingmast_design.beams.shell_model import build_beam_shell_model
+    from wingmast_design.beams.fea_model import project_panels_to_skin
+    from wingmast_design.aero import build_airplane, sweep_envelope
+    from wingmast_design.beams.laminate_sizing import (
         LaminateSizingConfig, size_beam_shell_laminate, design_vector_from_result,
         laminate_design_bounds)
-    from wing_design.materials.unidir import T700_EPOXY
+    from wingmast_design.materials.unidir import T700_EPOXY
     P = small_scenario()
     model = build_beam_shell_model(small_wingsail, n_beams=6, n_levels=4, lateral_bracing=True)
     env = sweep_envelope(build_airplane(small_wingsail), P.load_cases, method="lifting_line",
@@ -301,13 +301,13 @@ def test_braced_production_config_smoke():
     """
     import dataclasses
     import numpy as np
-    from wing_design.geometry import small_wingsail
-    from wing_design import small_scenario
-    from wing_design.beams.shell_model import build_beam_shell_model
-    from wing_design.beams.fea_model import project_panels_to_skin, panel_pressure_per_tri
-    from wing_design.aero import build_airplane, sweep_envelope
-    from wing_design.beams.laminate_sizing import LaminateSizingConfig, size_beam_shell_laminate
-    from wing_design.materials.unidir import T700_EPOXY, PVC_H80
+    from wingmast_design.geometry import small_wingsail
+    from wingmast_design import small_scenario
+    from wingmast_design.beams.shell_model import build_beam_shell_model
+    from wingmast_design.beams.fea_model import project_panels_to_skin, panel_pressure_per_tri
+    from wingmast_design.aero import build_airplane, sweep_envelope
+    from wingmast_design.beams.laminate_sizing import LaminateSizingConfig, size_beam_shell_laminate
+    from wingmast_design.materials.unidir import T700_EPOXY, PVC_H80
 
     G0 = 9.81
     # gravity + one lateral case (mimics slam_braced production accels)

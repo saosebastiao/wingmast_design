@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import numpy as np
 
-from wing_design import medium_scenario
-from wing_design.aero import build_airplane, sweep_envelope
-from wing_design.beams import (
+from wingmast_design import medium_scenario
+from wingmast_design.aero import build_airplane, sweep_envelope
+from wingmast_design.beams import (
     LaminateSizingConfig,
     build_beam_frame,
     build_beam_shell_model,
@@ -18,7 +18,7 @@ from wing_design.beams import (
     size_beam_shell_laminate,
     skin_band_map,
 )
-from wing_design.materials.unidir import T700_EPOXY
+from wingmast_design.materials.unidir import T700_EPOXY
 
 
 def main() -> None:

@@ -21,12 +21,12 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from wing_design.structural.frame import BeamSection, local_beam_stiffness
-from wing_design.structural.shell import (
+from wingmast_design.structural.frame import BeamSection, local_beam_stiffness
+from wingmast_design.structural.shell import (
     tri_element_stiffness_laminate, _triangle_local_frame,
 )
-from wing_design.materials.unidir import reduced_stiffness_Q, transformed_Qbar
-from wing_design.materials.failure import (
+from wingmast_design.materials.unidir import reduced_stiffness_Q, transformed_Qbar
+from wingmast_design.materials.failure import (
     reduced_stiffness_Q as _ply_Q,
     _strain_to_ply_axes,
     tsai_wu_strength_ratio,
@@ -915,7 +915,7 @@ def grad_core_check(factored, ds, *, which, safety_factor,
     util = SF·comp/σ_allow(t,c,f) · s(c), s = c/(c+1mm) (smooth activation).
     con = 1 − max util. Returns (con_value, grad (nx,)).
     """
-    from wing_design.materials.unidir import CORE_RAMP_M
+    from wingmast_design.materials.unidir import CORE_RAMP_M
     tris = ds.model.shell_tris
     M = tris.shape[0]
     SF = safety_factor
@@ -1401,7 +1401,7 @@ def provider_skin_vm(sigma_allow, qw2_of_combo=None):
 
 
 def provider_core_check(which, safety_factor):
-    from wing_design.materials.unidir import CORE_RAMP_M
+    from wingmast_design.materials.unidir import CORE_RAMP_M
 
     def p(fac, ds):
         tris = ds.model.shell_tris

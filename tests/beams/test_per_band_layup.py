@@ -4,13 +4,13 @@ pytestmark = pytest.mark.sizing  # full SLSQP sizing runs (measured 15-99 s each
 
 import numpy as np
 
-from wing_design.scenario import small_scenario
-from wing_design.beams import (
+from wingmast_design.scenario import small_scenario
+from wingmast_design.beams import (
     LaminateSizingConfig, build_beam_frame, build_beam_shell_model,
     project_panels_to_beam_nodes, size_beam_shell_laminate,
 )
-from wing_design.aero import build_airplane, sweep_envelope
-from wing_design.materials.unidir import T700_EPOXY
+from wingmast_design.aero import build_airplane, sweep_envelope
+from wingmast_design.materials.unidir import T700_EPOXY
 
 
 def _small(n_beams=8, n_levels=5):

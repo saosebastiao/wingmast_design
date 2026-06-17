@@ -27,15 +27,15 @@ from pathlib import Path
 import meshio
 import numpy as np
 
-from wing_design import medium_scenario
-from wing_design.aero import build_airplane, run_case_lifting_line
-from wing_design.structural import (
+from wingmast_design import medium_scenario
+from wingmast_design.aero import build_airplane, run_case_lifting_line
+from wingmast_design.structural import (
     shell_mesh_from_tet_mesh,
     solve_shell_elastic,
     tet_mesh_wing,
 )
-from wing_design.structural.projection import R_GEOM_FROM_AERO
-from wing_design.truss import trace_surface_streamlines
+from wingmast_design.structural.projection import R_GEOM_FROM_AERO
+from wingmast_design.truss import trace_surface_streamlines
 
 
 def project_panel_forces_to_shell_tris(panels, shell_mesh, *, safety_factor):

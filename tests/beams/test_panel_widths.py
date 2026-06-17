@@ -2,11 +2,11 @@
 import numpy as np
 import pytest
 
-from wing_design.geometry import small_wingsail
-from wing_design.materials.unidir import T700_EPOXY
-from wing_design.beams.shell_model import build_beam_shell_model, skin_panel_widths
-from wing_design.beams.shell_sizing import skin_areas
-from wing_design.beams.laminate_sizing import (
+from wingmast_design.geometry import small_wingsail
+from wingmast_design.materials.unidir import T700_EPOXY
+from wingmast_design.beams.shell_model import build_beam_shell_model, skin_panel_widths
+from wingmast_design.beams.shell_sizing import skin_areas
+from wingmast_design.beams.laminate_sizing import (
     LaminateSizingConfig,
     size_beam_shell_laminate,
 )

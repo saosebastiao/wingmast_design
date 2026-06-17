@@ -22,16 +22,16 @@ from pathlib import Path
 import meshio
 import numpy as np
 
-from wing_design import medium_scenario
-from wing_design.aero import build_airplane, run_case_lifting_line
-from wing_design.aero.loads import AeroResult
-from wing_design.structural import (
+from wingmast_design import medium_scenario
+from wingmast_design.aero import build_airplane, run_case_lifting_line
+from wingmast_design.aero.loads import AeroResult
+from wingmast_design.structural import (
     FEAResult,
     project_panels_to_oml_tris,
     solve_linear_elastic,
     tet_mesh_wing,
 )
-from wing_design.truss import (
+from wingmast_design.truss import (
     StreamlineIntegrator,
     extract_stress_lines,
     mirror_family_across_chord_plane,

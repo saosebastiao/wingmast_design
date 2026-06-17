@@ -1,7 +1,7 @@
 import numpy as np
 
-from wing_design.structural.frame import BeamSection, solve_frame
-from wing_design.structural.beam_shell import solve_beam_shell, solve_beam_shell_laminate
+from wingmast_design.structural.frame import BeamSection, solve_frame
+from wingmast_design.structural.beam_shell import solve_beam_shell, solve_beam_shell_laminate
 
 E_B, NU = 70e9, 0.3
 G_B = E_B / (2 * (1 + NU))

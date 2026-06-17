@@ -1,6 +1,6 @@
 ---
 name: sizing-run
-description: Use when launching, monitoring, or reporting wing_design sizing/FEA runs — examples in examples/2x–4x, medium/large wingsail optimizations, sweeps, or any run expected to take more than a minute.
+description: Use when launching, monitoring, or reporting wingmast_design sizing/FEA runs — examples in examples/2x–4x, medium/large wingsail optimizations, sweeps, or any run expected to take more than a minute.
 ---
 
 # Running sizing/FEA jobs

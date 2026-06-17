@@ -1645,13 +1645,13 @@ def _constraint_names_for_test(
     that aborts immediately, then reads the module-level ``_last_specs`` list
     that is populated by the sizer just before the minimize call.
     """
-    import wing_design.beams.laminate_sizing as _ls
+    import wingmast_design.beams.laminate_sizing as _ls
 
-    from wing_design.materials.unidir import T700_EPOXY
-    from wing_design import small_scenario
-    from wing_design.beams.fea_model import project_panels_to_skin
-    from wing_design.aero import build_airplane, sweep_envelope
-    from wing_design.geometry import small_wingsail
+    from wingmast_design.materials.unidir import T700_EPOXY
+    from wingmast_design import small_scenario
+    from wingmast_design.beams.fea_model import project_panels_to_skin
+    from wingmast_design.aero import build_airplane, sweep_envelope
+    from wingmast_design.geometry import small_wingsail
 
     # Build a minimal load set from the small scenario so the sizer has valid
     # FEA inputs (beam_vm depends on FEA forces so we need at least one load).

@@ -1,5 +1,5 @@
 [project]
-name = "wing-design"
+name = "wingmast-design"
 version = "0.1.0"
 description = "Wing design experiments using build123d"
 readme = "README.md"
@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.scripts]
-wing-design = "wing_design:main"
+wingmast-design = "wingmast_design:main"
 
 [build-system]
 requires = ["uv_build>=0.11.16,<0.12.0"]

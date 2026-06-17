@@ -2,15 +2,15 @@
 import numpy as np
 import pytest
 
-from wing_design.geometry import small_wingsail
-from wing_design.materials.unidir import PVC_H80, T700_EPOXY
-from wing_design.beams.shell_model import build_beam_shell_model
-from wing_design.beams.laminate_sizing import (
+from wingmast_design.geometry import small_wingsail
+from wingmast_design.materials.unidir import PVC_H80, T700_EPOXY
+from wingmast_design.beams.shell_model import build_beam_shell_model
+from wingmast_design.beams.laminate_sizing import (
     LaminateSizingConfig,
     laminate_result_is_feasible,
     size_beam_shell_laminate,
 )
-from wing_design.beams.sensitivity import ks_aggregate
+from wingmast_design.beams.sensitivity import ks_aggregate
 
 RHO = 1550.0
 SF = 1.5
@@ -75,7 +75,7 @@ def test_ks_gradients_match_fd_through_scipy_closures():
     # exercises every wired family (panel, beam-Euler, tube-wall, wrinkle,
     # crimp, skin, defl, twist) including multi-combo softmax weighting.
     from scipy.optimize import approx_fprime
-    import wing_design.beams.laminate_sizing as ls
+    import wingmast_design.beams.laminate_sizing as ls
     m, loads, cfg = _setup(core=PVC_H80, tube=True)
 
     captured = {}
@@ -120,7 +120,7 @@ def test_ks_foundation_gradients_match_fd():
     # (k chains through t_band/f0/f45/t_core + EI chains through r/t_hollow).
     from scipy.optimize import approx_fprime
     import dataclasses
-    import wing_design.beams.laminate_sizing as ls
+    import wingmast_design.beams.laminate_sizing as ls
     m, loads, cfg = _setup(core=PVC_H80, tube=True)
     cfg = dataclasses.replace(cfg, ply_angle_datum=(0.0, 0.0, 1.0),
                               beam_buckling_model="foundation")
@@ -167,8 +167,8 @@ def test_ks_beam_buck_brace_radius_gradient_matches_fd():
     # beam_buck KS Jacobian's brace_radius column (the LAST column) must be
     # NONZERO (proves the optimizer now "sees" the rings) and match a central
     # difference of the constraint value at that column.
-    import wing_design.beams.laminate_sizing as ls
-    from wing_design.geometry import medium_wingsail
+    import wingmast_design.beams.laminate_sizing as ls
+    from wingmast_design.geometry import medium_wingsail
 
     m = build_beam_shell_model(medium_wingsail, n_beams=8, n_levels=5,
                                core_tube=False, hollow_beams=False,
@@ -267,8 +267,8 @@ def test_beam_vm_gradient_on_brace_row_matches_fd():
     # match a central difference of beam_con's brace component. The brace
     # element has a FIXED nominal radius (no radius-DV column), so its gradient
     # flows only through the displacement adjoint w.r.t. the other DVs.
-    import wing_design.beams.laminate_sizing as ls
-    from wing_design.beams.shell_sizing import beam_radius_groups
+    import wingmast_design.beams.laminate_sizing as ls
+    from wingmast_design.beams.shell_sizing import beam_radius_groups
 
     m, loads, cfg = _braced_ks_model_and_cfg()
 
@@ -361,8 +361,8 @@ def test_ortho_plate_qstar_isotropic_and_fd():
     # isotropic, so Qstar = 2·Qeff00 exactly (the kc=4 long-plate identity:
     # ½·Qstar stands in for Qeff00 with no model change for isotropic skins);
     # (2) dQstar_df matches central-difference FD of Qstar over (f0, f45).
-    from wing_design.materials.unidir import laminate_stiffness
-    from wing_design.beams.sensitivity import (dQeff_df, dQstar_df,
+    from wingmast_design.materials.unidir import laminate_stiffness
+    from wingmast_design.beams.sensitivity import (dQeff_df, dQstar_df,
                                                ortho_plate_Qstar)
     ply = T700_EPOXY
     Qiso = laminate_stiffness(ply, f0=0.25, f45=0.5, f90=0.25, thickness=1.0)[2]
@@ -389,7 +389,7 @@ def test_ks_panel_datum_ortho_gradients_match_fd():
     # the mode on (panel f-chains now run through Qstar; t/c chains shared).
     from scipy.optimize import approx_fprime
     import dataclasses
-    import wing_design.beams.laminate_sizing as ls
+    import wingmast_design.beams.laminate_sizing as ls
     m, loads, cfg = _setup(core=PVC_H80, tube=True)
     cfg = dataclasses.replace(cfg, ply_angle_datum=(0.0, 0.0, 1.0),
                               panel_d_mode="datum_ortho",
@@ -442,7 +442,7 @@ def test_incumbent_guard_never_worse_than_feasible_seed():
                                     maxiter=300)
     assert laminate_result_is_feasible(good, dataclasses.replace(cfg, ks_rho=None))
     # reconstruct x0 from the optimum and rerun with a starved budget
-    from wing_design.beams.shell_sizing import beam_radius_groups
+    from wingmast_design.beams.shell_sizing import beam_radius_groups
     goe, G = beam_radius_groups(m)
     rg = np.zeros(G); seen = set()
     for e, g in enumerate(goe):

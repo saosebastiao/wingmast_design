@@ -1,6 +1,6 @@
 import numpy as np
 
-from wing_design.geometry import small_wingsail
+from wingmast_design.geometry import small_wingsail
 
 
 def test_spar_radius_is_floored_inscribed_circle():
@@ -9,7 +9,7 @@ def test_spar_radius_is_floored_inscribed_circle():
     # floored to the nearest cm → 0.08 m.
     assert abs(spec.spar_radius - 0.08) < 1e-9
     # It is floored, so it never exceeds the true min distance from pivot to surface.
-    from wing_design.geometry.airfoil import naca_00xx_coords
+    from wingmast_design.geometry.airfoil import naca_00xx_coords
     coords = (naca_00xx_coords(spec.thickness, n=spec.n_airfoil_points)
               - np.array([spec.pivot_frac, 0.0])) * spec.root_chord
     true_min = float(np.min(np.hypot(coords[:, 0], coords[:, 1])))

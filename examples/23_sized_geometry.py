@@ -12,9 +12,9 @@ from pathlib import Path
 import numpy as np
 from build123d import Compound, export_step
 
-from wing_design import medium_scenario
-from wing_design.aero import build_airplane, sweep_envelope
-from wing_design.beams import (
+from wingmast_design import medium_scenario
+from wingmast_design.aero import build_airplane, sweep_envelope
+from wingmast_design.beams import (
     SizingConfig,
     build_beam_frame,
     build_sized_circular_beams,
@@ -24,7 +24,7 @@ from wing_design.beams import (
     size_beams,
     spline_surface_error,
 )
-from wing_design.geometry import build_wing_solid
+from wingmast_design.geometry import build_wing_solid
 
 
 def main() -> None:

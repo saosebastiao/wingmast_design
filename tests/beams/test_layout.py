@@ -1,6 +1,6 @@
 import numpy as np
 
-from wing_design.beams.layout import stress_weighted_targets
+from wingmast_design.beams.layout import stress_weighted_targets
 
 
 def test_uniform_weights_recover_even_spacing():

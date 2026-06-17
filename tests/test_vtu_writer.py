@@ -1,7 +1,7 @@
 import numpy as np
 from xml.etree import ElementTree
 
-from wing_design.viz.vtu import write_vtu_triangles
+from wingmast_design.viz.vtu import write_vtu_triangles
 
 
 def test_vtu_roundtrip_structure(tmp_path):

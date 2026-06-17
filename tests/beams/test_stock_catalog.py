@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from wing_design.beams.stock_catalog import select_stock_sizes
+from wingmast_design.beams.stock_catalog import select_stock_sizes
 
 
 CAT = [0.010, 0.015, 0.020, 0.025]

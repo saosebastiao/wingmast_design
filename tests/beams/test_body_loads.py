@@ -7,22 +7,22 @@ rebuilt at every perturbed x — exactly what the dF term must account for.
 import numpy as np
 import pytest
 
-from wing_design.geometry import small_wingsail
-from wing_design.materials.unidir import T700_EPOXY
-from wing_design.beams.body_loads import body_load_jacobian, body_load_vector
-from wing_design.beams.shell_model import build_beam_shell_model
-from wing_design.beams.shell_sizing import beam_radius_groups, skin_areas, skin_band_map
-from wing_design.beams.laminate_sizing import (
+from wingmast_design.geometry import small_wingsail
+from wingmast_design.materials.unidir import T700_EPOXY
+from wingmast_design.beams.body_loads import body_load_jacobian, body_load_vector
+from wingmast_design.beams.shell_model import build_beam_shell_model
+from wingmast_design.beams.shell_sizing import beam_radius_groups, skin_areas, skin_band_map
+from wingmast_design.beams.laminate_sizing import (
     LaminateSizingConfig,
     laminate_result_is_feasible,
     size_beam_shell_laminate,
 )
-from wing_design.beams.sensitivity import (
+from wingmast_design.beams.sensitivity import (
     DesignSens, grad_tip_defl, grad_panel_buckling, prepare_sensitivity,
 )
-from wing_design.materials.unidir import laminate_stiffness
-from wing_design.structural.beam_shell import solve_beam_shell_laminate_factored
-from wing_design.structural.frame import BeamSection, _element_rotation
+from wingmast_design.materials.unidir import laminate_stiffness
+from wingmast_design.structural.beam_shell import solve_beam_shell_laminate_factored
+from wingmast_design.structural.frame import BeamSection, _element_rotation
 
 RHO = 1550.0
 ACCEL = (4.0, 2.0, -9.81)   # heeled-ish gravity: lateral + axial components
@@ -148,8 +148,8 @@ def test_grad_panel_buckling_with_body_load_matches_fd():
                                      areas=areas, cache=cache, dF=dF)
     assert con0 < 1.0   # compressive active panel
 
-    from wing_design.structural.buckling import panel_buckling_utilization
-    from wing_design.structural.shell import recover_membrane_stress_C
+    from wingmast_design.structural.buckling import panel_buckling_utilization
+    from wingmast_design.structural.shell import recover_membrane_stress_C
 
     def con_value(x):
         fac, Qx, t_tri = _decode_solve_with_body(m, goe, G, beam_len, aero, x)

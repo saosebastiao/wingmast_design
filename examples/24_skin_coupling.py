@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import numpy as np
 
-from wing_design import medium_scenario
-from wing_design.aero import build_airplane, sweep_envelope
-from wing_design.beams import (
+from wingmast_design import medium_scenario
+from wingmast_design.aero import build_airplane, sweep_envelope
+from wingmast_design.beams import (
     build_beam_frame,
     build_beam_shell_model,
     project_panels_to_beam_nodes,

@@ -2,7 +2,7 @@
 import numpy as np
 import pytest
 
-from wing_design.structural.frame import BeamSection
+from wingmast_design.structural.frame import BeamSection
 
 
 def test_full_wall_equals_solid():

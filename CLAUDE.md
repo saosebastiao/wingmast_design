@@ -1,4 +1,4 @@
-# wing_design — project conventions
+# wingmast_design — project conventions
 
 Free-rotating CFRP wingsail designed as shell-following form beams + filament-wound
 load-bearing skin, sized FEA-in-the-loop. Scales 1 m drone wing → 100 m turbine blade.

@@ -27,15 +27,15 @@ import numpy as np
 RUNS = Path(__file__).parent
 sys.path.insert(0, str(RUNS))
 
-from wing_design import medium_scenario
-from wing_design.aero import build_airplane, sweep_envelope
-from wing_design.beams import build_beam_shell_model
-from wing_design.beams.fea_model import panel_pressure_per_tri, project_panels_to_skin
-from wing_design.beams.laminate_sizing import (
+from wingmast_design import medium_scenario
+from wingmast_design.aero import build_airplane, sweep_envelope
+from wingmast_design.beams import build_beam_shell_model
+from wingmast_design.beams.fea_model import panel_pressure_per_tri, project_panels_to_skin
+from wingmast_design.beams.laminate_sizing import (
     LaminateSizingConfig, design_vector_from_result, laminate_design_bounds,
     laminate_result_is_feasible, size_beam_shell_laminate,
 )
-from wing_design.materials.unidir import PVC_H80, T700_EPOXY
+from wingmast_design.materials.unidir import PVC_H80, T700_EPOXY
 from chain_rebuild import DATUM
 from slam_braced import eigen_worst_braced, G0, TH, GATE
 

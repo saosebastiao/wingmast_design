@@ -20,27 +20,27 @@ import time
 
 import numpy as np
 
-from wing_design import medium_scenario
-from wing_design.aero import build_airplane, sweep_envelope
-from wing_design.beams import (
+from wingmast_design import medium_scenario
+from wingmast_design.aero import build_airplane, sweep_envelope
+from wingmast_design.beams import (
     LaminateSizingConfig,
     build_beam_frame,
     build_beam_shell_model,
     project_panels_to_beam_nodes,
     size_beam_shell_laminate,
 )
-from wing_design.beams.laminate_sizing import laminate_result_is_feasible
-from wing_design.beams.shell_model import skin_datum_angles, skin_panel_widths
-from wing_design.beams.shell_sizing import skin_areas, skin_band_map
-from wing_design.materials.unidir import T700_EPOXY, laminate_stiffness_offset
-from wing_design.structural.beam_shell import (
+from wingmast_design.beams.laminate_sizing import laminate_result_is_feasible
+from wingmast_design.beams.shell_model import skin_datum_angles, skin_panel_widths
+from wingmast_design.beams.shell_sizing import skin_areas, skin_band_map
+from wingmast_design.materials.unidir import T700_EPOXY, laminate_stiffness_offset
+from wingmast_design.structural.beam_shell import (
     solve_beam_shell_laminate, solve_beam_shell_laminate_factored,
 )
-from wing_design.structural.buckling import panel_buckling_utilization
-from wing_design.structural.eigen_buckling import linear_buckling
-from wing_design.structural.frame import BeamSection
-from wing_design.structural.geometric_stiffness import assemble_geometric_stiffness
-from wing_design.structural.shell import recover_membrane_stress_C
+from wingmast_design.structural.buckling import panel_buckling_utilization
+from wingmast_design.structural.eigen_buckling import linear_buckling
+from wingmast_design.structural.frame import BeamSection
+from wingmast_design.structural.geometric_stiffness import assemble_geometric_stiffness
+from wingmast_design.structural.shell import recover_membrane_stress_C
 
 SF = 1.5
 DATUM = (0.0, 0.0, 1.0)

@@ -1,7 +1,7 @@
 import numpy as np
 
-from wing_design.geometry import small_wingsail, oml_section_polyline
-from wing_design.beams.cross_section import (
+from wingmast_design.geometry import small_wingsail, oml_section_polyline
+from wingmast_design.beams.cross_section import (
     resample_closed_polyline,
     beam_section_points,
 )
@@ -54,7 +54,7 @@ def test_beam_points_le_and_te_are_members():
 
 def test_resample_with_arc_fractions_matches_even_default():
     sq = np.array([[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]], dtype=float)
-    from wing_design.beams.cross_section import resample_closed_polyline
+    from wingmast_design.beams.cross_section import resample_closed_polyline
     a = resample_closed_polyline(sq, 8)
     b = resample_closed_polyline(sq, 8, arc_fractions=np.arange(8) / 8.0)
     assert np.allclose(a, b)

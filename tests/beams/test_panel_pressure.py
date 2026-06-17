@@ -3,19 +3,19 @@
 import numpy as np
 import pytest
 
-from wing_design.geometry import small_wingsail
-from wing_design.materials.unidir import T700_EPOXY, laminate_stiffness
-from wing_design.beams.shell_model import build_beam_shell_model, skin_panel_widths
-from wing_design.beams.shell_sizing import beam_radius_groups
-from wing_design.beams.laminate_sizing import (
+from wingmast_design.geometry import small_wingsail
+from wingmast_design.materials.unidir import T700_EPOXY, laminate_stiffness
+from wingmast_design.beams.shell_model import build_beam_shell_model, skin_panel_widths
+from wingmast_design.beams.shell_sizing import beam_radius_groups
+from wingmast_design.beams.laminate_sizing import (
     LaminateSizingConfig,
     laminate_result_is_feasible,
     size_beam_shell_laminate,
 )
-from wing_design.beams.sensitivity import DesignSens, grad_skin_vm, prepare_sensitivity
-from wing_design.structural.beam_shell import solve_beam_shell_laminate_factored
-from wing_design.structural.frame import BeamSection, _element_rotation
-from wing_design.structural.shell import membrane_von_mises, recover_membrane_stress_C
+from wingmast_design.beams.sensitivity import DesignSens, grad_skin_vm, prepare_sensitivity
+from wingmast_design.structural.beam_shell import solve_beam_shell_laminate_factored
+from wingmast_design.structural.frame import BeamSection, _element_rotation
+from wingmast_design.structural.shell import membrane_von_mises, recover_membrane_stress_C
 
 SIGMA_ALLOW = 2.0e8
 
@@ -30,7 +30,7 @@ class _FakePanels:
 
 def _panels_near(model, k=5, f=(40.0, 0.0, 10.0)):
     """Fake aero panels near the first k tri centroids (geom->aero rotation inverse)."""
-    from wing_design.structural.projection import R_GEOM_FROM_AERO
+    from wingmast_design.structural.projection import R_GEOM_FROM_AERO
     centroids = model.nodes[model.shell_tris[:k]].mean(axis=1)
     centers_aero = centroids @ R_GEOM_FROM_AERO          # inverse of geom = R @ aero
     forces_aero = np.tile(np.asarray(f) @ R_GEOM_FROM_AERO, (k, 1))
@@ -38,18 +38,18 @@ def _panels_near(model, k=5, f=(40.0, 0.0, 10.0)):
 
 
 def test_skin_projection_conserves_total_force():
-    from wing_design.beams.fea_model import project_panels_to_skin
+    from wingmast_design.beams.fea_model import project_panels_to_skin
     model = build_beam_shell_model(small_wingsail, n_beams=4, n_levels=3)
     panels = _panels_near(model, k=6)
     loads = project_panels_to_skin(model, panels, safety_factor=1.5)
-    from wing_design.structural.projection import R_GEOM_FROM_AERO
+    from wingmast_design.structural.projection import R_GEOM_FROM_AERO
     expected = 1.5 * (panels.forces_xyz @ R_GEOM_FROM_AERO.T).sum(axis=0)
     assert np.allclose(loads[:, :3].sum(axis=0), expected, rtol=1e-12)
     assert np.allclose(loads[:, 3:], 0.0)
 
 
 def test_panel_pressure_maps_force_over_area():
-    from wing_design.beams.fea_model import panel_pressure_per_tri
+    from wingmast_design.beams.fea_model import panel_pressure_per_tri
     model = build_beam_shell_model(small_wingsail, n_beams=4, n_levels=3)
     panels = _panels_near(model, k=3)
     q = panel_pressure_per_tri(model, panels)

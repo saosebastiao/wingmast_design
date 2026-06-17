@@ -2,22 +2,22 @@
 import numpy as np
 import pytest
 
-from wing_design.geometry import small_wingsail
-from wing_design.materials.unidir import T700_EPOXY, laminate_stiffness
-from wing_design.beams.shell_model import build_beam_shell_model
-from wing_design.beams.shell_sizing import beam_radius_groups
-from wing_design.beams.laminate_sizing import (
+from wingmast_design.geometry import small_wingsail
+from wingmast_design.materials.unidir import T700_EPOXY, laminate_stiffness
+from wingmast_design.beams.shell_model import build_beam_shell_model
+from wingmast_design.beams.shell_sizing import beam_radius_groups
+from wingmast_design.beams.laminate_sizing import (
     LaminateSizingConfig,
     laminate_design_bounds,
     laminate_result_is_feasible,
     size_beam_shell_laminate,
 )
-from wing_design.beams.sensitivity import (
+from wingmast_design.beams.sensitivity import (
     DesignSens, grad_tube_wall_one, prepare_sensitivity,
 )
-from wing_design.structural.buckling import TUBE_WALL_KNOCKDOWN, tube_wall_utilization
-from wing_design.structural.frame import BeamSection, _element_rotation
-from wing_design.structural.beam_shell import solve_beam_shell_laminate_factored
+from wingmast_design.structural.buckling import TUBE_WALL_KNOCKDOWN, tube_wall_utilization
+from wingmast_design.structural.frame import BeamSection, _element_rotation
+from wingmast_design.structural.beam_shell import solve_beam_shell_laminate_factored
 
 RHO = 1550.0
 SF = 1.5
@@ -152,7 +152,7 @@ def test_sizer_assembles_tube_bonds(monkeypatch):
     # Regression for the 2026-06-10 bug: tube_bond_elements existed on the model
     # but never reached the sizing FEA (only tip_gusset_elements were passed), so
     # the tube was optimized while floating. Capture the solver's gusset args.
-    import wing_design.beams.laminate_sizing as ls
+    import wingmast_design.beams.laminate_sizing as ls
     m, goe, G, S, M, beam_len, loads = _tube_case()
     captured = {}
     orig = ls.solve_beam_shell_laminate_factored

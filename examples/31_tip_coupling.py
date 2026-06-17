@@ -11,15 +11,15 @@ from __future__ import annotations
 
 import numpy as np
 
-from wing_design import medium_scenario
-from wing_design.aero import build_airplane, sweep_envelope
-from wing_design.beams import (
+from wingmast_design import medium_scenario
+from wingmast_design.aero import build_airplane, sweep_envelope
+from wingmast_design.beams import (
     build_beam_frame,
     build_beam_shell_model,
     project_panels_to_beam_nodes,
     solve_beam_shell_tip_coupled,
 )
-from wing_design.structural.frame import von_mises_per_element
+from wingmast_design.structural.frame import von_mises_per_element
 
 
 def main() -> None:

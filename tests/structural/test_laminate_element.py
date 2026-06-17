@@ -1,6 +1,6 @@
 import numpy as np
 
-from wing_design.structural.shell import (
+from wingmast_design.structural.shell import (
     tri_element_stiffness, tri_element_stiffness_laminate,
     recover_membrane_stress, recover_membrane_stress_C,
 )

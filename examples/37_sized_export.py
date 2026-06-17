@@ -11,10 +11,10 @@ from pathlib import Path
 
 from build123d import Compound, export_stl
 
-from wing_design import medium_scenario
-from wing_design.aero import build_airplane, sweep_envelope
-from wing_design.geometry import build_wing_solid, medium_wingsail
-from wing_design.beams import (
+from wingmast_design import medium_scenario
+from wingmast_design.aero import build_airplane, sweep_envelope
+from wingmast_design.geometry import build_wing_solid, medium_wingsail
+from wingmast_design.beams import (
     LaminateSizingConfig,
     build_beam_frame,
     build_beam_shell_model,
@@ -24,7 +24,7 @@ from wing_design.beams import (
     resample_segment_radii,
     size_beam_shell_laminate,
 )
-from wing_design.materials.unidir import T700_EPOXY
+from wingmast_design.materials.unidir import T700_EPOXY
 
 
 def main() -> None:

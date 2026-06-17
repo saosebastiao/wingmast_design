@@ -16,19 +16,19 @@ import time
 
 import numpy as np
 
-from wing_design import medium_scenario
-from wing_design.aero import build_airplane, sweep_envelope
-from wing_design.beams import (
+from wingmast_design import medium_scenario
+from wingmast_design.aero import build_airplane, sweep_envelope
+from wingmast_design.beams import (
     LaminateSizingConfig,
     build_beam_frame,
     build_beam_shell_model,
     project_panels_to_beam_nodes,
     size_beam_shell_laminate,
 )
-from wing_design.beams.build import resample_segment_radii
-from wing_design.beams.laminate_sizing import laminate_result_is_feasible
-from wing_design.beams.shell_sizing import beam_radius_groups
-from wing_design.materials.unidir import T700_EPOXY
+from wingmast_design.beams.build import resample_segment_radii
+from wingmast_design.beams.laminate_sizing import laminate_result_is_feasible
+from wingmast_design.beams.shell_sizing import beam_radius_groups
+from wingmast_design.materials.unidir import T700_EPOXY
 
 N_LEVELS_SWEEP = [6, 8, 10, 12]
 N_BEAMS_SPOT = 20          # spot-check at n_levels = 8

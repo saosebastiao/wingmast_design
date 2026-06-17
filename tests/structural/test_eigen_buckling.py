@@ -8,13 +8,13 @@ error only (documented per test).
 import numpy as np
 import pytest
 
-from wing_design.structural.frame import BeamSection, local_beam_stiffness, _element_rotation
-from wing_design.structural.geometric_stiffness import (
+from wingmast_design.structural.frame import BeamSection, local_beam_stiffness, _element_rotation
+from wingmast_design.structural.geometric_stiffness import (
     beam_geometric_K,
     assemble_geometric_stiffness,
 )
-from wing_design.structural.eigen_buckling import linear_buckling
-from wing_design.structural.shell import _element_K, _triangle_local_frame
+from wingmast_design.structural.eigen_buckling import linear_buckling
+from wingmast_design.structural.shell import _element_K, _triangle_local_frame
 
 E = 70.0e9
 G = 27.0e9

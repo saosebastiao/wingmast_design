@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from wing_design.structural.buckling import beam_euler_utilization, panel_buckling_utilization
+from wingmast_design.structural.buckling import beam_euler_utilization, panel_buckling_utilization
 
 
 def test_euler_utilization_against_closed_form():
@@ -29,7 +29,7 @@ def test_panel_utilization_against_closed_form():
 
 def test_euler_I_matches_solid_rod_form():
     import numpy as np
-    from wing_design.structural.buckling import beam_euler_utilization, beam_euler_utilization_I
+    from wingmast_design.structural.buckling import beam_euler_utilization, beam_euler_utilization_I
     r = np.array([0.01, 0.02]); L = np.array([1.0, 1.5]); N = np.array([-500.0, -2000.0])
     I = np.pi * r**4 / 4.0
     a = beam_euler_utilization(N, r, L, E=70e9, K=1.0, safety_factor=1.5)
@@ -39,8 +39,8 @@ def test_euler_I_matches_solid_rod_form():
 
 def test_tube_wall_utilization_scales():
     import numpy as np
-    from wing_design.structural.frame import BeamSection
-    from wing_design.structural.buckling import tube_wall_utilization
+    from wingmast_design.structural.frame import BeamSection
+    from wingmast_design.structural.buckling import tube_wall_utilization
     sec = BeamSection.annular(0.05, 0.002)
     u = tube_wall_utilization(np.array([-1.0e4]), np.array([0.05]), np.array([0.002]),
                               np.array([sec.A]), E=70e9, safety_factor=1.5)
@@ -66,7 +66,7 @@ def test_k_ring_quartic_and_gradient_fd():
     s = np.array([0.9, 0.9, 1.1])
     alpha = 3.0
     r = 0.012
-    from wing_design.structural.buckling import k_ring_stiffness, dk_ring_dr
+    from wingmast_design.structural.buckling import k_ring_stiffness, dk_ring_dr
     k = k_ring_stiffness(r, E, L_ring, s, alpha)
     expect = alpha * E * (np.pi * r**4 / 4.0) / (L_ring**3 * s)
     assert np.allclose(k, expect, rtol=1e-12)
@@ -78,7 +78,7 @@ def test_k_ring_quartic_and_gradient_fd():
 
 def test_k_ring_finite_at_degenerate_inputs():
     import numpy as np
-    from wing_design.structural.buckling import k_ring_stiffness, dk_ring_dr
+    from wingmast_design.structural.buckling import k_ring_stiffness, dk_ring_dr
     # zero radius / zero span must not produce nan/inf (bounded DV never hits 0, but
     # boundary probes and degenerate mesh elements must stay finite for the optimizer)
     assert np.isfinite(dk_ring_dr(0.0, 7e10, np.array([0.4]), np.array([0.9])))

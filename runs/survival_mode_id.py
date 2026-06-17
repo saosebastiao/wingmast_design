@@ -33,23 +33,23 @@ import numpy as np
 RUNS = Path(__file__).parent
 sys.path.insert(0, str(RUNS))
 
-from wing_design import medium_scenario
-from wing_design.aero import build_airplane, sweep_envelope
-from wing_design.beams import build_beam_shell_model, resample_segment_radii
-from wing_design.beams.body_loads import body_load_vector
-from wing_design.beams.fea_model import project_panels_to_skin
-from wing_design.beams.shell_model import skin_datum_angles
-from wing_design.beams.shell_sizing import skin_band_map
-from wing_design.materials.unidir import (
+from wingmast_design import medium_scenario
+from wingmast_design.aero import build_airplane, sweep_envelope
+from wingmast_design.beams import build_beam_shell_model, resample_segment_radii
+from wingmast_design.beams.body_loads import body_load_vector
+from wingmast_design.beams.fea_model import project_panels_to_skin
+from wingmast_design.beams.shell_model import skin_datum_angles
+from wingmast_design.beams.shell_sizing import skin_band_map
+from wingmast_design.materials.unidir import (
     PVC_H80, T700_EPOXY, laminate_stiffness_offset, sandwich_D_factor,
 )
-from wing_design.structural.beam_shell import (
+from wingmast_design.structural.beam_shell import (
     solve_beam_shell_laminate, solve_beam_shell_laminate_factored,
 )
-from wing_design.structural.eigen_buckling import linear_buckling
-from wing_design.structural.frame import BeamSection
-from wing_design.structural.geometric_stiffness import assemble_geometric_stiffness
-from wing_design.structural.shell import recover_membrane_stress_C
+from wingmast_design.structural.eigen_buckling import linear_buckling
+from wingmast_design.structural.frame import BeamSection
+from wingmast_design.structural.geometric_stiffness import assemble_geometric_stiffness
+from wingmast_design.structural.shell import recover_membrane_stress_C
 
 import chain_rebuild as cr
 import mesh_converge_diag as mc

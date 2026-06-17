@@ -143,22 +143,22 @@ Kept as-is from the prior build; these are the inputs to the shell-beam pipeline
 First step of the new pipeline: get shell-following beams + skin + assembly
 built end-to-end at crude fidelity.
 
-- `wing_design.beams.splines` — sample the **full** OML (wing + transition + spar
+- `wingmast_design.beams.splines` — sample the **full** OML (wing + transition + spar
   to keel-step) at chosen `z` levels: LE spline, TE spline, and 14 arc-spaced
   splines (even arc-length around each cross-section). Fit cubic B-splines through
   the on-surface points (`scipy.splprep`).
-- `wing_design.beams.build` — at each spline point, inward beam arc with a
+- `wingmast_design.beams.build` — at each spline point, inward beam arc with a
   **fixed crude radius**; loft each beam bottom→top.
-- `wing_design.beams.wrap` — connect beam-arc endpoints per `z` level → loft →
+- `wingmast_design.beams.wrap` — connect beam-arc endpoints per `z` level → loft →
   thicken by `shell_thickness`.
-- `wing_design.beams.assembly` — beams + skin into one assembly; export STEP.
+- `wingmast_design.beams.assembly` — beams + skin into one assembly; export STEP.
 
 **Deliverable: `examples/20_form_beams.py` → STEP of the shell-beam wingsail
 (unsized).**
 
 ### Phase B — Structural-eval spike
 
-- `wing_design.beams.fea_model` — assemble a structural FEA model from the
+- `wingmast_design.beams.fea_model` — assemble a structural FEA model from the
   splines: **beam elements** along each form-beam (cantilevered at the keel-step)
   + **load-bearing skin shell** between beams, isotropic-equivalent properties.
 - Solve under the existing `aero.cases` load cases; report stress, tip
@@ -177,7 +177,7 @@ unsized 20 mm-radius frame is far over-stiff (tip deflection ≈ 0.2 % span, mem
 
 ### Phase C — FEA-in-the-loop sizing spike
 
-- `wing_design.beams.sizing` — fully-stressed-design / optimality-criteria loop:
+- `wingmast_design.beams.sizing` — fully-stressed-design / optimality-criteria loop:
   set each beam's per-station cross-section area from its computed stress, re-solve
   Phase-B FEA, iterate to a stress/deflection-feasible structure; minimize mass.
 

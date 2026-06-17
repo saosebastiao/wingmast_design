@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
-from wing_design.scenario import small_scenario
-from wing_design.beams.shell_model import build_beam_shell_model, model_with_tip_gusset
-from wing_design.beams.tip_coupling import tip_clique_elements
+from wingmast_design.scenario import small_scenario
+from wingmast_design.beams.shell_model import build_beam_shell_model, model_with_tip_gusset
+from wingmast_design.beams.tip_coupling import tip_clique_elements
 
 
 def _m(**kw):
@@ -29,10 +29,10 @@ def test_model_with_tip_gusset_roundtrip():
     assert m.tip_gusset_elements is None  # original unchanged
 
 
-from wing_design.structural.frame import BeamSection
-from wing_design.materials.unidir import T700_EPOXY, laminate_stiffness
-from wing_design.structural.beam_shell import solve_beam_shell_laminate
-from wing_design.beams.tip_coupling import tip_clique_elements
+from wingmast_design.structural.frame import BeamSection
+from wingmast_design.materials.unidir import T700_EPOXY, laminate_stiffness
+from wingmast_design.structural.beam_shell import solve_beam_shell_laminate
+from wingmast_design.beams.tip_coupling import tip_clique_elements
 
 
 def _fixed_case(n_beams=8, n_levels=5):
@@ -60,10 +60,10 @@ def test_gusset_reduces_tip_twist_fixed_design():
     assert base.axial_force.shape == gus.axial_force.shape == (m.beam_elements.shape[0],)  # recovery design-only
 
 
-from wing_design.beams import (LaminateSizingConfig, build_beam_frame, project_panels_to_beam_nodes,
+from wingmast_design.beams import (LaminateSizingConfig, build_beam_frame, project_panels_to_beam_nodes,
                                size_beam_shell_laminate, model_with_tip_gusset, beam_radius_groups)
-from wing_design.aero import build_airplane, sweep_envelope
-from wing_design.beams.laminate_sizing import laminate_result_is_feasible
+from wingmast_design.aero import build_airplane, sweep_envelope
+from wingmast_design.beams.laminate_sizing import laminate_result_is_feasible
 
 
 def _sizer_case(gusset=False, n_beams=8, n_levels=5):

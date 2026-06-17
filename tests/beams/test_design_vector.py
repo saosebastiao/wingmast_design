@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from wing_design.beams.design_vector import DesignVector
+from wingmast_design.beams.design_vector import DesignVector
 
 
 def _dv():

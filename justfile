@@ -23,9 +23,9 @@ upgrade:
     uv lock --upgrade
     uv sync
 
-# Run the wing-design entrypoint
+# Run the wingmast-design entrypoint
 run *args:
-    uv run wing-design {{args}}
+    uv run wingmast-design {{args}}
 
 # Run an arbitrary python script under the project venv
 py *args:
@@ -35,9 +35,9 @@ py *args:
 shell:
     uv run ipython
 
-# Execute a module in src/wing_design (usage: just exec airfoil)
+# Execute a module in src/wingmast_design (usage: just exec airfoil)
 exec module:
-    uv run python -m wing_design.{{module}}
+    uv run python -m wingmast_design.{{module}}
 
 # Run a numbered example script (usage: just example 01_wing_solid)
 example name:

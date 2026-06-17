@@ -391,7 +391,7 @@ before the next lever starts.
 
 ### Phase G — Filament-winding path planner
 
-- `wing_design.manufacturing.winding` — continuous winding passes forming the
+- `wingmast_design.manufacturing.winding` — continuous winding passes forming the
   airfoil + reinforcing joints/buckling-prone members; output robot/G-code paths
   + per-pass fiber-orientation map feeding the CLT skin model (closes M.3).
 
@@ -416,7 +416,7 @@ interior-truss comparison baseline).
 ## Tooling
 
 - **Geometry viewer:** examples that produce build123d geometry call
-  `wing_design.show_in_viewer(part)`, which sends to the **OCP CAD Viewer** VS Code
+  `wingmast_design.show_in_viewer(part)`, which sends to the **OCP CAD Viewer** VS Code
   extension (bernhard-42) on port 3939. If the viewer isn't running, the call is a
   no-op with a printed hint.
 - **ParaView 6.x** for FEA field visualization via the `just view` / `just shot`
@@ -430,7 +430,7 @@ interior-truss comparison baseline).
 ## Module map
 
 ```
-src/wing_design/
+src/wingmast_design/
   __init__.py
   scenario.py    # DesignParameters dataclass + default_scenario()   [done]
   geometry/      # build123d wing OML + spar                         [done]

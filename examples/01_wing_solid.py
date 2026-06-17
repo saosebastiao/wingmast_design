@@ -10,8 +10,8 @@ from pathlib import Path
 
 from build123d import export_step, export_stl
 
-from wing_design.geometry import build_wing_solid, medium_wingsail
-from wing_design.viz import show_in_viewer
+from wingmast_design.geometry import build_wing_solid, medium_wingsail
+from wingmast_design.viz import show_in_viewer
 
 
 def main() -> None:

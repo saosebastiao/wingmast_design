@@ -28,17 +28,17 @@ RUNS = Path(__file__).parent
 
 
 def main() -> None:
-    from wing_design import medium_scenario
-    from wing_design.aero import build_airplane, sweep_envelope
-    from wing_design.beams import build_beam_shell_model
-    from wing_design.beams.fea_model import (
+    from wingmast_design import medium_scenario
+    from wingmast_design.aero import build_airplane, sweep_envelope
+    from wingmast_design.beams import build_beam_shell_model
+    from wingmast_design.beams.fea_model import (
         panel_pressure_per_tri, project_panels_to_skin,
     )
-    from wing_design.beams.laminate_sizing import (
+    from wingmast_design.beams.laminate_sizing import (
         LaminateSizingConfig, design_vector_from_result,
         size_beam_shell_laminate_multistart,
     )
-    from wing_design.materials.unidir import PVC_H80, T700_EPOXY
+    from wingmast_design.materials.unidir import PVC_H80, T700_EPOXY
     from chain_rebuild import ACCELS, DATUM, SF, eigen_worst
 
     P = medium_scenario()

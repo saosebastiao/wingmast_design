@@ -1,5 +1,5 @@
-from wing_design.geometry import small_wingsail
-from wing_design.beams.build import build_form_beams, build_skin_wrap, build_assembly
+from wingmast_design.geometry import small_wingsail
+from wingmast_design.beams.build import build_form_beams, build_skin_wrap, build_assembly
 
 
 def test_form_beams_build():

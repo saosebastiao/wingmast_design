@@ -1,6 +1,6 @@
 import numpy as np
 
-from wing_design.structural.shell import recover_membrane_stress, recover_membrane_stress_C, membrane_von_mises
+from wingmast_design.structural.shell import recover_membrane_stress, recover_membrane_stress_C, membrane_von_mises
 
 E, NU = 70e9, 0.3
 

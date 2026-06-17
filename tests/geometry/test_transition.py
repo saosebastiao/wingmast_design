@@ -1,6 +1,6 @@
 import numpy as np
 
-from wing_design.geometry import small_wingsail, oml_section_polyline
+from wingmast_design.geometry import small_wingsail, oml_section_polyline
 
 
 def _xspan(spec, z):

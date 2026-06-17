@@ -1,7 +1,7 @@
 import math
 
-from wing_design.scenario import small_scenario, medium_scenario, large_scenario
-from wing_design import DesignParameters
+from wingmast_design.scenario import small_scenario, medium_scenario, large_scenario
+from wingmast_design import DesignParameters
 
 
 def test_builders_return_design_parameters():

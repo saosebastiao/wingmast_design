@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from wing_design.structural.shell import ShellMesh, solve_shell_elastic
+from wingmast_design.structural.shell import ShellMesh, solve_shell_elastic
 
 
 def build_rect_mesh(L: float, b: float, nx: int, ny: int) -> tuple[np.ndarray, np.ndarray]:

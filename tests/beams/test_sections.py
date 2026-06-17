@@ -1,8 +1,8 @@
 import numpy as np
 
-from wing_design.geometry import small_wingsail
-from wing_design.beams.cross_section import beam_section_points
-from wing_design.beams.sections import oml_outward_normals, lens_section_polyline
+from wingmast_design.geometry import small_wingsail
+from wingmast_design.beams.cross_section import beam_section_points
+from wingmast_design.beams.sections import oml_outward_normals, lens_section_polyline
 
 
 def test_normals_unit_and_outward():

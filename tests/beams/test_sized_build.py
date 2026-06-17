@@ -1,7 +1,7 @@
 import numpy as np
 
-from wing_design.geometry import small_wingsail
-from wing_design.beams.build import build_sized_lens_beams, build_sized_circular_beams, resample_segment_radii
+from wingmast_design.geometry import small_wingsail
+from wingmast_design.beams.build import build_sized_lens_beams, build_sized_circular_beams, resample_segment_radii
 
 
 def _radii(n_beams, n_levels):

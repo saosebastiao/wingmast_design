@@ -1,6 +1,6 @@
 import numpy as np
 
-from wing_design.structural.frame import BeamSection, solve_frame, von_mises_per_element
+from wingmast_design.structural.frame import BeamSection, solve_frame, von_mises_per_element
 
 E = 70e9
 NU = 0.3
