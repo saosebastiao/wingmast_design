@@ -1888,6 +1888,41 @@ governs; per-scenario DAF/torque). `examples/55` demos the add-a-scenario flow. 
 A new ceiling physics (e.g. VPP-tabulated) = one new `CeilingKind` member (closed union kept pure/
 inspectable — no callable smuggled into the registry).
 
+### Load-model correction + first-order geometry trigger (2026-06-17, user-driven)
+
+**The S.1 "mast is very flexible" finding was overstated — it used an isotropic 70 GPa SOLID
+ROD under a TIP POINT LOAD.** (User-caught.) The frame solver is isotropic scalar-E; 70 GPa is
+the *knocked-down isotropic-equivalent* (~½ the UD E1 = 135 GPa); a solid rod puts no material
+at depth; and a tip point-load overstates moment/deflection vs the real distributed load. The
+journal-BC *mechanics* test was valid; the deflection *magnitude* was not a structural prediction.
+
+**First-order, REPRESENTATIVE check (`runs/firstorder_mast_stiffness.py`): the slender mast IS
+genuinely deflection- + buckling-governed — but the lever is section DEPTH.** Distributed OP-2
+load (resultant at the CE) + UD-carbon box caps at depth: the baseline 1 m-chord / t/c 0.18 mast
+deflects **~11× the 0.44 m limit** and locally buckles (λ 0.5), while strength is fine (R 3.8).
+**Deepening the section (t/c ~0.5–0.6) meets deflection + buckling at the SAME cap mass** (`I ∝
+depth²` for free); growing the chord works but costs mass ∝ chord and doesn't fix local buckling;
+thickening caps is hopeless for deflection (40 mm = 1.3 t). **Implication for the geometry rethink
+(deferred): the bare wingmast wants a DEEP structural section (t/c ~0.5–0.6), not a thin NACA-0018
+— the soft sail provides the aero shape, so the rigid mast under it is free to be deep.** Caveat:
+first-order (closed-form local buckling; E_cap/σ_allow placeholders; the 0.44 m limit is itself a
+serviceability choice).
+
+**Corrected operational load VECTORS (`aero/load_vectors.py`, `R-AE-5`/`R-S-2`) (user-driven).**
+The operational load is NOT a transverse point force: the deployed wingsail's **CoP sits slightly
+aft of the mast pivot** (the aero balance that passively feathers the sail), so the resultant at
+that offset CoP produces, **distributed along the span**: chord-normal (lift/heeling → bending),
+chordwise (drag), AND **torsion about the pivot = normal · (CoP − pivot offset)** (the hinge
+moment). `AeroBalance` + `operational_mast_load` + `nodal_load_vectors`: force-conserving (∫ =
+the RM-capped resultant; centroid at the CE; nodal-lumped to Fy/Fx/Mz for `solve_frame_journal`).
+**Key reconciliation (user-flagged):** the CoP-vs-pivot offset is the SAME feature behind the
+survival feathering (`feathering.restoring_margin_xc`) — and a "slightly behind" CoP gives a
+**small hinge torque (~1.3 kN·m at 0.03c offset)**, far below the **~4.3 kN·m the old
+`Cm_axis = −0.16` implied** — so that Cm was inconsistent with the design intent. *Follow-up:*
+`design_cases`/`feathering` should adopt the single `AeroBalance` offset (the Cm-based torque
+superseded). 7 tests; suite 294 → **301**. (load model is mast-section-independent — a stable
+foundation regardless of the geometry rethink.)
+
 **Phase-A adversarial review + fixes (2026-06-17) — 10 defects (0 high, 6 med, 4 low); D-2
 re-framed from "resolved" to "conditionally resolved".** A 27-agent physics review (5
 dimensions) confirmed the D-2 finding **overclaimed** in the same way Phase G's fit validator
