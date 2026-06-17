@@ -15,7 +15,6 @@ Several FEA backends are wired in:
     FEA: form beams plus a load-bearing skin, assembled into one system
     (Phase E.1).
 """
-from .beam import TubeSparSizing, size_tube_spar
 from .buckling import beam_euler_utilization, panel_buckling_utilization
 from .beam_shell import solve_beam_shell, solve_beam_shell_laminate
 from .fea import FEAResult, solve_linear_elastic
@@ -43,13 +42,11 @@ __all__ = [
     "ShellFEAResult",
     "ShellMesh",
     "TetMesh",
-    "TubeSparSizing",
     "membrane_von_mises",
     "project_panels_to_oml_tris",
     "recover_membrane_stress",
     "recover_membrane_stress_C",
     "shell_mesh_from_tet_mesh",
-    "size_tube_spar",
     "solve_beam_shell",
     "solve_beam_shell_laminate",
     "solve_frame",

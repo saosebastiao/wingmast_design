@@ -1,5 +1,12 @@
 """Phase 3: tapered tube-spar sizing under the full aero load envelope.
 
+FROZEN LEGACY (shell-beam re-scope, 2026-06-16): the single-tube-spar baseline is
+superseded by the laminate / box-spar path. `size_tube_spar` / `TubeSparSizing` are
+no longer exported from the `structural` forward API — import them from
+`wingmast_design.structural.beam` directly if you need the historical baseline. Kept
+only so `examples/03` and `examples/22` still import. Do not build forward (Oyster-595)
+work on this. See `docs/specs/00-rescope-groundwork/` (`R-GND-2`).
+
 The wingsail's primary load path in this baseline is a single tapered tube spar
 running the length of the wing. The spar is treated as a cantilever beam fixed
 at the root (z = 0) and free at the tip (z = span). All aero load cases are

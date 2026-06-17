@@ -1,5 +1,13 @@
 """Centralized design parameters for the wingsail project.
 
+LEGACY (shell-beam): `DesignParameters` + the small/medium/large scenarios are the
+single-wingsail demo configuration; the re-scope re-targets them in Phases G/A. Its
+aerodynamic `load_cases` default is the frozen dinghy envelope (`aero.cases`). The
+typed **structural** load collection (operational/survival categories, body-load
+accel vectors, datum, buckling SF) now lives in `wingmast_design.load_cases` — that is
+the forward single source of truth (`R-GND-5/6`). This file stays functional for the
+legacy examples + `runs/` chain until Phase A re-targets it.
+
 Every parameter the project uses lives in `DesignParameters`. Examples
 construct one instance (via `small_scenario()`/`medium_scenario()`/
 `large_scenario()` for the demo wingsails) and pass field values into each
@@ -20,7 +28,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .aero.cases import DESIGN_CASES, LoadCase
+from .aero.cases import DESIGN_CASES  # frozen legacy dinghy values
+from .aero.loads import LoadCase
 from .geometry.wing import WingSpec
 from .geometry.wingsails import small_wingsail, medium_wingsail, large_wingsail
 from .materials.unidir import T700_EPOXY, UDPly

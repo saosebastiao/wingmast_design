@@ -23,7 +23,7 @@ from wingmast_design.beams import (
     project_panels_to_beam_nodes,
     size_beams,
 )
-from wingmast_design.structural import size_tube_spar
+from wingmast_design.structural.beam import size_tube_spar  # frozen legacy baseline (R-GND-2)
 
 
 def main() -> None:

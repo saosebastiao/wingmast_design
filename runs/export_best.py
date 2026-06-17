@@ -54,7 +54,7 @@ from wingmast_design.structural.geometric_stiffness import assemble_geometric_st
 from wingmast_design.structural.shell import recover_membrane_stress_C
 from wingmast_design.viz.vtu import write_vtu_triangles
 
-from chain_rebuild import ACCELS, DATUM, SF, build_sections_from_result
+from chain_rebuild import ACCELS, DATUM, G0, SF, TH, build_sections_from_result  # G0/TH single-sourced (R-GND-6)
 from wingmast_design.structural.frame import BeamSection
 
 RUNS = Path(__file__).parent
@@ -183,8 +183,6 @@ def main(target: str = "multistart_v2_best.npz") -> None:
     accels = ACCELS
     slam_g = meta.get("slam_g")
     if slam_g is not None:
-        G0 = 9.81
-        TH = np.radians(30.0)
         accels = ((0.0, 0.0, -G0),
                   (0.0, G0 * np.sin(TH), -G0 * np.cos(TH)),
                   (0.0, float(slam_g) * G0, -G0),

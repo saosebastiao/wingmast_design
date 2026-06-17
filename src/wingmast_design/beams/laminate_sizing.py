@@ -298,6 +298,44 @@ def laminate_result_is_feasible(
     return True
 
 
+def build_sections_from_result(model, result: "LaminateSizingResult"):
+    """Map a sized laminate result onto per-element FEA `BeamSection`s.
+
+    LEGACY (shell-beam): builds annular sections for hollow form-beam elements
+    (wall per radius-group), circular sections elsewhere, and appends the core-tube
+    sections + the tube-bond gusset clique when present. Promoted out of
+    `runs/chain_rebuild.py` (its sole prior definition) so it is defined once
+    (Article XII; `R-GND-7`); the other `runs/` scripts that use it
+    (`eigen_mesh_behavior`, `slam_braced`, `export_best`, `survival_*`, `brazier_diag`)
+    import it rather than re-implementing. The Phase-S box-spar section builder will
+    supersede this for the re-scoped geometry.
+
+    Returns ``(sections, gusset_elements, gusset_section)`` — the latter two are
+    ``None`` unless the model carries a core tube.
+    """
+    r = result
+    if r.t_hollow is not None:
+        goe, _G = beam_radius_groups(model)
+        hgroups = sorted({int(goe[e]) for e in model.hollow_elements})
+        tmap = {g: i for i, g in enumerate(hgroups)}
+        hset = set(int(e) for e in model.hollow_elements)
+        sections = []
+        for e, rr in enumerate(r.radii):
+            if e in hset:
+                t_e = min(float(r.t_hollow[tmap[int(goe[e])]]), float(rr))
+                sections.append(BeamSection.annular(float(rr), t_e))
+            else:
+                sections.append(BeamSection.circular(float(rr)))
+    else:
+        sections = [BeamSection.circular(float(x)) for x in r.radii]
+    gusset = gusset_sec = None
+    if r.r_tube is not None:
+        sections += [BeamSection.annular(float(r.r_tube[s]), float(r.t_wall[s]))
+                     for s in range(len(r.r_tube))]
+        gusset, gusset_sec = model.tube_bond_elements, BeamSection.circular(0.05)
+    return sections, gusset, gusset_sec
+
+
 def size_beam_shell_laminate(
     model: BeamShellModel,
     load_arrays: list[np.ndarray],

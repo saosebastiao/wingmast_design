@@ -19,7 +19,24 @@ from typing import Iterable, Literal
 import aerosandbox as asb
 import numpy as np
 
-from .cases import LoadCase
+
+@dataclass(frozen=True)
+class LoadCase:
+    """A single aerodynamic operating point: apparent wind speed, trim AoA,
+    altitude, and the safety/gust factor to scale the resulting loads by.
+
+    The *type* is forward (Phase A defines apparent-wind cases as `LoadCase`s); the
+    legacy dinghy *envelope* of concrete cases lives in the frozen `aero.cases`
+    (`DESIGN_CASES`). Defined here, in the forward solver module, so nothing forward
+    imports the frozen module (`R-GND-1`).
+    """
+
+    name: str
+    airspeed_mps: float        # apparent wind speed
+    alpha_deg: float           # wingsail trim AoA
+    altitude_m: float = 0.0
+    safety_factor: float = 1.0
+    description: str = ""
 
 
 @dataclass(frozen=True)

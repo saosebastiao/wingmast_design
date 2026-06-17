@@ -8,7 +8,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from wingmast_design.aero import DESIGN_CASES, build_airplane, sweep_envelope
+from wingmast_design.aero import build_airplane, sweep_envelope
+from wingmast_design.aero.cases import DESIGN_CASES  # frozen legacy dinghy envelope (R-GND-1)
 from wingmast_design.geometry import medium_wingsail
 
 

@@ -143,15 +143,20 @@ def background(view, rgb: tuple[float, float, float] = (1.0, 1.0, 1.0)) -> None:
 
 
 def _wing_side_view(view) -> None:
-    """Set a camera that shows the 5 m wingsail along its span.
+    """Span-agnostic side view: look from the chord (+X) side, +Y up.
 
-    Geometry-frame convention: chord +X, normal +Y, span +Z, root at z=0.
-    We look from the chord +X side toward the wing, +Y up, with the
-    camera offset enough to fit the ~5 m span.
+    Geometry-frame convention: chord +X, normal +Y, span +Z, root at z=0. Only the
+    view *direction* + up-vector are set here; `ResetCamera` then refits the focal
+    point and distance to the loaded data bounds, so the framing is correct for any
+    span (5 m demo wingsail through the 45 m wingmast) without hard-coded offsets
+    (`R-GND-8`).
     """
-    view.CameraPosition = [6.0, 5.0, -3.0]
-    view.CameraFocalPoint = [0.5, 0.0, 2.5]
     view.CameraViewUp = [0.0, 1.0, 0.0]
+    # Direction only — magnitudes are irrelevant (ResetCamera refits distance and
+    # recentres the focal point on the data). Looks from +X, slightly elevated,
+    # angled along -span so the full mast reads.
+    view.CameraFocalPoint = [0.0, 0.0, 0.0]
+    view.CameraPosition = [1.0, 0.35, -0.35]
     view.CameraParallelProjection = 0
     ResetCamera(view)
 

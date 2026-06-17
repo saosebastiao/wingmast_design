@@ -6,10 +6,11 @@ deflection limits under all DESIGN_CASES, and prints mass + critical dimensions.
 """
 from __future__ import annotations
 
-from wingmast_design.aero import DESIGN_CASES, build_airplane, sweep_envelope
+from wingmast_design.aero import build_airplane, sweep_envelope
+from wingmast_design.aero.cases import DESIGN_CASES  # frozen legacy dinghy envelope (R-GND-1)
 from wingmast_design.geometry import medium_wingsail
 from wingmast_design.materials import T700_EPOXY
-from wingmast_design.structural import size_tube_spar
+from wingmast_design.structural.beam import size_tube_spar  # frozen legacy baseline (R-GND-2)
 
 
 def main() -> None:

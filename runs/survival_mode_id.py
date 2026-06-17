@@ -66,8 +66,7 @@ N_FROM = 8
 N_LIST = [24, 40, 56]
 GATE = 1.5
 
-G0 = 9.81
-TH = np.radians(30.0)
+G0, TH = cr.G0, cr.TH  # single-sourced from wingmast_design.load_cases (R-GND-6)
 SLAM_G = 3.0
 ACCELS = (
     (0.0, 0.0, -G0),

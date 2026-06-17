@@ -45,10 +45,7 @@ from wingmast_design.beams.laminate_sizing import (
 )
 from wingmast_design.materials.unidir import PVC_H80, T700_EPOXY
 import chain_rebuild
-from chain_rebuild import DATUM, SF, eigen_worst
-
-G0 = 9.81
-TH = np.radians(30.0)
+from chain_rebuild import DATUM, G0, SF, TH, eigen_worst  # G0/TH single-sourced (R-GND-6)
 
 
 def main(slam_g: float) -> None:

@@ -56,12 +56,10 @@ from wingmast_design.structural.frame import BeamSection
 from wingmast_design.structural.geometric_stiffness import assemble_geometric_stiffness
 from wingmast_design.structural.shell import recover_membrane_stress_C
 
-# import chain_rebuild to reuse constants DATUM and SF
+# Reuse the single-source structural constants (Article XII) via chain_rebuild,
+# which now imports them from wingmast_design.load_cases.
 import chain_rebuild
-from chain_rebuild import DATUM, SF, build_sections_from_result
-
-G0 = 9.81
-TH = np.radians(30.0)
+from chain_rebuild import DATUM, G0, SF, TH, build_sections_from_result
 
 GATE = 1.5
 SF_STEPS = [1.5, 1.75, 2.0, 2.3]

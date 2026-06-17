@@ -37,7 +37,7 @@ from .shell_sizing import (
 )
 from .laminate_sizing import (
     LaminateSizingConfig, LaminateSizingResult, size_beam_shell_laminate,
-    laminate_design_bounds, laminate_result_is_feasible,
+    laminate_design_bounds, laminate_result_is_feasible, build_sections_from_result,
     MultiStartResult, size_beam_shell_laminate_multistart,
 )
 from .fidelity import spline_surface_error

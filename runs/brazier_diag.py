@@ -31,10 +31,7 @@ from wingmast_design.materials.unidir import (
 from wingmast_design.structural.beam_shell import solve_beam_shell_laminate
 from wingmast_design.structural.frame import BeamSection
 
-from chain_rebuild import DATUM, build_sections_from_result
-
-G0 = 9.81
-TH = np.radians(30.0)
+from chain_rebuild import DATUM, G0, TH, build_sections_from_result  # G0/TH single-sourced (R-GND-6)
 
 NPZ = RUNS / "slam_survival_3g_20mm.npz"
 

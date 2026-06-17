@@ -1,7 +1,8 @@
 # Wing Design — Findings & Decisions Archive
 
 > Extracted from `plan.md` on 2026-06-09, when plan.md was repurposed to plan the
-> improvement build-out (see [`improvement_backlog.md`](./improvement_backlog.md)).
+> improvement build-out (the shell-beam-era `improvement_backlog.md`, since superseded by
+> the 2026-06-16 re-scope — that forward plan is archived at `archive/plan_shellbeam.md`).
 > This is the durable record of the analyses, findings, and decisions from the original
 > shell-beam build-out (Phases 1–F, complete). **Append new findings and decisions
 > here**; plan.md holds only the forward plan.
@@ -146,8 +147,10 @@ beams** sized against the real FEA. Decisions taken:
 
 Retired modules (interior-truss path): `truss.extract` isocurve tracing, ALP,
 manufacturability filters. The frame-field/parametrization code survives for
-Phase F. See [`guided_generative_design.md` → Future optimizations](./guided_generative_design.md#future-optimizations--directions)
-item 9 for keeping the old path reachable as a comparison baseline.
+Phase F (now `truss/*`, archived analysis-only by the re-scope — `R-GND-3`). The
+old `guided_generative_design.md` "Future optimizations" notes on keeping the
+interior-truss path reachable as a comparison baseline were superseded by the
+re-scope; that content now lives in `specification.md` / `engineering_basis.md`.
 
 
 ## Phase history & findings
@@ -1695,6 +1698,71 @@ highest-value next build**, justified by the +1030.8 kg/SF price. Prize to be
 measured by a buckling-SF sweep (mass vs true eigen) before committing to the V.9
 build. (SLSQP warm-settle breakdown: beams 522 + skin 314 + core 80 + tube 106 kg.)
 
+### Phase 0 — Re-scope groundwork (2026-06-16)
+
+Detailed spec/plan: `docs/specs/00-rescope-groundwork/` (`R-GND-1…8`, parent `R-LOAD-1`/`G-5`).
+
+**Fast suite was red — broken `.venv`, not code (2026-06-16) — fixed, green baseline
+restored.** `just test` failed with **45 collection errors** (`ModuleNotFoundError: No
+module named 'wingmast_design'`) while `uv run python -c "import wingmast_design"` and
+`uv run python -m pytest` both worked. Root cause: the re-scope **renamed the project dir
+`wing_design` → `wingmast_design`**, but the `.venv` was copied wholesale, so 35
+console-script shebangs (incl. `pytest`/`py.test`) still pointed at
+`/Users/.../ws/wing_design/.venv/bin/python` and `pyvenv.cfg` still read `prompt =
+wing-design`. The bare `pytest` console script exec'd the stale (old-dir) interpreter,
+which lacked the new `src` `.pth`. **Why:** venvs are not relocatable — absolute-path
+shebangs survive a directory rename. **Fix:** `rm -rf .venv && uv sync` (regenerable from
+the committed lock; the project's standard procedure) → all 35 shebangs corrected, 0
+stale remaining. **Green baseline: 203 passed / 31 deselected / 27.75 s measured** (the
+gate every later Phase-0 step held). (`just test`, measured.)
+
+**Phase-0 scaffolding done (2026-06-16) — green, no new optimum (groundwork only).** Stood
+up the typed structural load layer + legacy quarantine the later phases build on. Built:
+(1) `wingmast_design.load_cases` — `CaseCategory` (OPERATIONAL/SURVIVAL/MANUFACTURING) +
+frozen `StructuralLoadCase`, with `serviceability_applies` as the **single Article-IV gate**
+(deflection/twist ⇒ operational only); the structural constants (`G0`/`TH`/`ACCELS`/`SF`/
+`DATUM`) promoted here **byte-identically** as the single source (Article XII), with
+`runs/chain_rebuild.py` + `runs/slam_braced.py` rewired to import them. (2) Promoted the
+duplicated FEA section builder `build_sections_from_result` → `beams.laminate_sizing`
+(exported from `beams`). (3) Quarantined the shell-beam legacy off the forward API: dinghy
+`aero.cases` (`DESIGN_CASES`/`LoadCase`) and tube-spar `structural.beam`
+(`size_tube_spar`/`TubeSparSizing`) removed from their package `__all__`s + banner-marked
+**FROZEN LEGACY**; `truss/*` banner-marked **ARCHIVED analysis-only**; legacy examples
+(`02`/`03`/`22`) pinned to direct module paths (still import — `OUT-4`). (4) Healed the two
+dangling shell-beam doc links in `findings.md`; made the ParaView camera span-agnostic
+(`ResetCamera`-refit, no 5 m hard-code) and reconciled `paraview/README.md` (removed 5
+phantom interior-truss scripts). **Verification:** 12 new acceptance tests
+(`tests/test_rescope_groundwork.py`) green; full fast suite **215 passed / 31 deselected**
+(203 prior + 12); example `53_rescope_groundwork` round-trips the typed layer, the section
+builder (areas π·r²), and a CAD assembly export (STL 6.2 MB + STEP 2.1 MB, 17 children) in
+**1.1 s**. **Why:** Article XII wants load cases/constants typed once in `src/`, never
+duplicated in `runs/`; the gate opens Phases G/A/S/M. **Scope calls (recorded in the spec):**
+typed layer is a **new module**, not an extension of the shell-beam `DesignParameters`; the
+sized-result CAD `build_assembly(sized_result)` is **deferred to Phase G/V** (the box-spar
+geometry it would build doesn't exist yet; a param-based `build_assembly` already exists).
+Regenerate: `just example 53_rescope_groundwork`. (4.1 s example wall-clock; no FEA/sizing
+this phase — III/XI eigen+headline N/A.)
+
+**Phase-0 adversarial review + fixes (2026-06-16) — 6 honesty/completeness defects found,
+all fixed.** A 22-agent multi-agent review (6 dimensions, each finding independently
+refuted before counting) confirmed **6 real defects (0 high, 1 medium, 5 low)** in the
+above — none affecting masses or the green gate, all honesty/completeness gaps the
+constitution (Article VII/XII) cares about. Fixed in-phase: (1) the promoted function's
+provenance note wrongly claimed a "re-implementation in eigen_mesh_behavior" — git shows
+`chain_rebuild.py` was its sole prior definition; corrected. (2) The dinghy quarantine was
+`__all__`-level only — the forward aero **solver** still imported the frozen module via the
+`LoadCase` type; **moved `LoadCase` to `aero.loads`** (the forward home), so only the
+bannered-legacy `scenario.py` `DESIGN_CASES` default now touches `aero.cases` (import-graph
+test added; `structural.beam`/`truss` were already fully clean). (3) `R-GND-6`'s "defined
+once" was false — **5 more `runs/` scripts** (`slam`, `export_best`, `survival_mesh_eigen`,
+`survival_mode_id`, `brazier_diag`) still re-derived `G0`/`TH`; all rewired to the single
+source (runs-wide test added). (4) `R-GND-1`/`R-GND-4` acceptance prose narrowed to what is
+testable/achievable (the `scenario.py` `DESIGN_CASES` legacy residual and the archived
+`plan_shellbeam.md` historical links are documented in-scope-by-design exceptions). Suite
+re-verified green after fixes; 2 new guard tests (forward-aero import-graph, runs-wide
+constant dedup) added. **Why record:** negative/partial results are findings (Article VII);
+the original entry under-disclosed the residual `runs/` duplication and the import-graph gap.
+
 ## Decisions log
 
 | Decision | Choice |
@@ -1705,6 +1773,8 @@ build. (SLSQP warm-settle breakdown: beams 522 + skin 314 + core 80 + tube 106 k
 | Skin role | Load-bearing structural shell (supersedes fairing-only). |
 | Beam layout (early) | Even arc-length spacing; frame-field-driven in Phase F. |
 | Build-out strategy | Thin end-to-end spike (Phases A–C), then deepen (D+). |
+| Phase 0 groundwork (2026-06-16, `R-GND-1…8`) | Typed structural load layer is a **new** `wingmast_design.load_cases` (`CaseCategory`/`StructuralLoadCase`, `serviceability_applies` = the Article-IV gate) — **not** an extension of the shell-beam `DesignParameters`. Constants (`G0/TH/ACCELS/SF/DATUM`) + the FEA `build_sections_from_result` promoted to `src/` **byte-identically** (Article XII); `runs/` rewired. Dinghy `aero.cases` + tube-spar `structural.beam` quarantined off the forward `__all__`s (FROZEN LEGACY banners); `truss/*` = ARCHIVED analysis-only; legacy examples pinned to direct paths (`OUT-4`). `build_assembly(sized_result)` CAD **deferred to Phase G/V** (param-based one already exists). Suite 203→**215 passed**; example `53`. Opens Phases G/A/S/M. |
+| venv shebang fix (2026-06-16) | `just test` was red (45 collection errors) — the `.venv` carried stale `wing_design`→`wingmast_design` rename shebangs (35 scripts) + `pyvenv.cfg prompt`. Fix: `rm -rf .venv && uv sync` (regenerable from lock). Lesson: venvs are not relocatable after a project-dir rename — regenerate, don't copy. |
 | Phase-4 FEA backend | Roll-our-own linear-tet solver in numpy/scipy; promote to sfepy/FEniCSx when anisotropic homogenization matters. |
 | Spline fitting | Dense on-surface sampling + cubic B-spline interpolation (no NURBS weight optimization). |
 | Spar radius | Derived (max inscribed circle at pivot, floored to cm), not stored. |

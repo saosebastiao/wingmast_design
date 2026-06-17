@@ -73,8 +73,7 @@ N_LIST = [8, 12, 24, 28, 32, 36, 40, 48]
 K_MODES = 5
 GATE = 1.5
 
-G0 = 9.81
-TH = np.radians(30.0)
+G0, TH = cr.G0, cr.TH  # single-sourced from wingmast_design.load_cases (R-GND-6)
 SLAM_G = 3.0
 # 4-case SLAM accel envelope (matches runs/slam_braced.py for slam_g=3)
 ACCELS = (

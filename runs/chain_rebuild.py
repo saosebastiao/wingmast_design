@@ -28,14 +28,18 @@ import numpy as np
 
 from wingmast_design import medium_scenario
 from wingmast_design.aero import build_airplane, sweep_envelope
-from wingmast_design.beams import build_beam_shell_model, size_beam_shell_laminate
+from wingmast_design.beams import (
+    build_beam_shell_model, build_sections_from_result, size_beam_shell_laminate,
+)
 from wingmast_design.beams.body_loads import body_load_vector
 from wingmast_design.beams.fea_model import panel_pressure_per_tri, project_panels_to_skin
 from wingmast_design.beams.laminate_sizing import (
     LaminateSizingConfig, design_vector_from_result, laminate_result_is_feasible,
 )
 from wingmast_design.beams.shell_model import skin_datum_angles
-from wingmast_design.beams.shell_sizing import beam_radius_groups, skin_band_map
+from wingmast_design.beams.shell_sizing import skin_band_map
+# Structural constants now live once in src/ (Article XII; promoted out of this file).
+from wingmast_design.load_cases import ACCELS, DATUM, G0, SF, TH
 from wingmast_design.materials.unidir import (
     PVC_H80, T700_EPOXY, laminate_stiffness_offset, sandwich_D_factor,
 )
@@ -43,39 +47,10 @@ from wingmast_design.structural.beam_shell import (
     solve_beam_shell_laminate, solve_beam_shell_laminate_factored,
 )
 from wingmast_design.structural.eigen_buckling import linear_buckling
-from wingmast_design.structural.frame import BeamSection
 from wingmast_design.structural.geometric_stiffness import assemble_geometric_stiffness
 from wingmast_design.structural.shell import recover_membrane_stress_C
 
-G0 = 9.81
-TH = np.radians(30.0)
-ACCELS = ((0.0, 0.0, -G0), (0.0, G0 * np.sin(TH), -G0 * np.cos(TH)))
-SF = 1.5
-DATUM = (0.0, 0.0, 1.0)
 RUNS = Path(__file__).parent
-
-
-def build_sections_from_result(model, r):
-    if r.t_hollow is not None:
-        goe, _G = beam_radius_groups(model)
-        hgroups = sorted({int(goe[e]) for e in model.hollow_elements})
-        tmap = {g: i for i, g in enumerate(hgroups)}
-        hset = set(int(e) for e in model.hollow_elements)
-        sections = []
-        for e, rr in enumerate(r.radii):
-            if e in hset:
-                t_e = min(float(r.t_hollow[tmap[int(goe[e])]]), float(rr))
-                sections.append(BeamSection.annular(float(rr), t_e))
-            else:
-                sections.append(BeamSection.circular(float(rr)))
-    else:
-        sections = [BeamSection.circular(float(x)) for x in r.radii]
-    gusset = gusset_sec = None
-    if r.r_tube is not None:
-        sections += [BeamSection.annular(float(r.r_tube[s]), float(r.t_wall[s]))
-                     for s in range(len(r.r_tube))]
-        gusset, gusset_sec = model.tube_bond_elements, BeamSection.circular(0.05)
-    return sections, gusset, gusset_sec
 
 
 def eigen_worst(model, loads_aero, r, rho):

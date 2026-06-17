@@ -19,9 +19,9 @@ ParaView ships its own Python interpreter. Don't use the project's
 The `justfile` wraps the common invocations:
 
 ```sh
-just view shell_per_region_skin                    # open interactive window
-just view sized_truss --color max_abs_sigma_MPa    # pass extra flags through
-just shot shell_per_region_skin                    # screenshot → docs/figures/shell_per_region_skin.png
+just view shell_fea                                # open interactive window
+just view shell_stress_lines                       # surface streamlines on the OML
+just shot shell_fea                                # screenshot → docs/figures/shell_fea.png
 just shot shell_fea /tmp/foo.png                   # custom output path
 just shots                                         # regenerate every screenshot
 just pv exports/shell_fea.vtu                      # launch the ParaView GUI
@@ -35,9 +35,9 @@ The raw invocations work too:
 
 ```sh
 PV=/Applications/ParaView-6.1.1.app/Contents/bin
-$PV/pvpython paraview/shell_per_region_skin.py
-$PV/pvbatch paraview/sized_truss.py exports/shell_frame_sized.vtu \
-    --color max_abs_sigma_MPa --screenshot truss.png
+$PV/pvpython paraview/shell_fea.py
+$PV/pvbatch paraview/shell_stress_lines.py exports/shell_stress_lines.vtu \
+    --screenshot streamlines.png
 ```
 
 Every script accepts a positional VTU path; if omitted it loads the
@@ -51,18 +51,14 @@ matching file from `exports/`. Run with `--help` for per-script flags.
 | `frame_phi.py` | `frame_phi.vtu` | 5b | φ scalar + smoothed eigenvector glyphs on the tet volume |
 | `frame_streamlines.py` | `frame_streamlines.vtu` | 5b | Retraced streamlines through the smoothed frame field |
 | `stress_lines.py` | `stress_lines.vtu` | 5a | Raw volumetric streamlines per (case × tack × family) |
-| `isocurves.py` | `isocurves.vtu` | 5c | Integer-isocurve segments per tet |
-| `sized_truss.py` | `lp_sized_truss.vtu` (overridable) | 6a-c, 6e, 6g | Any Phase-6 sized truss line network |
 | `shell_fea.py` | `shell_fea.vtu` | 4b | Shell σ_VM + principal-direction glyphs on the OML |
 | `shell_stress_lines.py` | `shell_stress_lines.vtu` | 5e | Surface streamlines on the OML (spar caps) |
-| `interior_candidates.py` | `interior_candidates.vtu` | 5f | Rib + spanwise + shear-web candidate network |
-| `coupled_shell_frame.py` | `coupled_shell_frame.vtu` | 6f | Shell + frame coupled FEA with displacement warp |
-| `shell_per_region_skin.py` | `shell_per_region_skin.vtu` | 6h | Per-region skin thickness |
 
-`sized_truss.py` is the catch-all for any line-cell VTU with
-`area_mm2` cell data: `truss_sized.vtu`, `lattice_truss_sized.vtu`,
-`lp_sized_truss.vtu`, `ab_iteration_truss.vtu`, `shell_track_sized.vtu`,
-`shell_frame_sized.vtu` all open with it.
+> Note: this table lists the scripts **actually present** in `paraview/`. The
+> interior-truss / per-region-skin / coupled-frame scripts from the shell-beam era
+> (`isocurves`, `sized_truss`, `interior_candidates`, `coupled_shell_frame`,
+> `shell_per_region_skin`) were removed and are intentionally absent (re-scope; the
+> three standing exports are re-targeted in the plan). `R-GND-8`.
 
 See [`../docs/visualizations.md`](../docs/visualizations.md) for the
 **physical interpretation** of each view — what the Michell pattern
@@ -83,9 +79,9 @@ visualization:
 - `threshold_between(source, assoc, field, lo, hi)` — `Threshold`
   filter using `LowerThreshold` / `UpperThreshold` (ParaView 6.x API).
 - `set_thick_lines(display, width)` — `RenderLinesAsTubes` + width.
-- `finish(args, view)` — installs a 3/4 side camera for the 5 m
-  wingsail, renders, and either saves a screenshot or opens an
-  interactive window.
+- `finish(args, view)` — installs a span-agnostic 3/4 side camera
+  (view direction + `ResetCamera` refit to the data bounds), renders,
+  and either saves a screenshot or opens an interactive window.
 
 ## State files (`.pvsm`)
 
@@ -100,9 +96,10 @@ to the script.
 
 ## Limitations
 
-- Glyph density and camera defaults are tuned for the 5 m wingsail
-  geometry. If you change `default_scenario()` to a wildly different
-  span, edit `_common._wing_side_view`.
+- The camera frames the loaded data at any span (`_wing_side_view`
+  sets the view direction and lets `ResetCamera` refit). Glyph
+  *density* (`scale_factor` / `every_nth`) is still tuned per script
+  and may want adjusting for a wildly different span.
 - The scripts assume the VTU file already exists. Run the
   corresponding `examples/NN_<phase>.py` first.
 - macOS ParaView prints `[openvkl] INITIALIZATION ERROR: …` on
