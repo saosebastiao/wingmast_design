@@ -2030,6 +2030,23 @@ positive-for-validation: confirms loads/method/architecture, not a mass figure. 
 9-agent web sweep+synthesis **15.4 min** measured / 473 k tokens; + direct visual read of both
 25-page primary PDFs. No compute run.)
 
+### Phase X1 — Amazon OML geometry (2026-06-17, `R-AMZ-1`)
+
+**Re-baselined the geometry onto Sponberg's *Project Amazon* wingmast OML — reproduced to 0.000
+mm.** New `geometry/amazon_mast.py` (`AmazonMastSpec` + `build_amazon_mast_solid` + `ellipse_coords`)
+builds the published OML: a **constant 2.5:1 ellipse** (t/c 0.40, "symmetric lens") scaled by the
+**modified-entasis** chord taper (the seven published station chords 750→300 mm, a sinusoidal ~112
+mm bulge above linear at mid-span), morphing below the wing root to a **round bearing stock OD 500
+(deck partners) → OD 450 (heel)**. Reuses the audited `wing._section_face`/`_transition_blend`/
+`ruled` loft (composition, not a new path). **Verified:** all 7 stations' chord×thickness within
+**0.000 mm** of the table (`R-AMZ-1` ≤1 mm); t/c = 0.40 held the full length; entasis bulge present
+(fatter than linear mid-span); **bury derived = total − sail-track = 3.69 m → 12.8 % of mast**,
+landing inside Sponberg's own 10–15 % rule (`D-AMZ-4`, central; swept later); lofted solid **valid**
+(OML volume 3.03 m³), Z spans heel −3.69 → masthead 21.94 m. The external OML is now **frozen**
+(`D-AMZ-1`): X2–X4 vary internal structure only. Example `55_amazon_mast` exports
+`exports/amazon_mast.{stl,step}`; 7 tests; geometry suite 56 green. (build+export **0.3 s**
+measured; `just example 55_amazon_mast` regenerates. Spec/plan: `docs/specs/04-amazon-baseline/`.)
+
 ## Decisions log
 
 | Decision | Choice |
