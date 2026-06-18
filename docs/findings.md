@@ -2047,6 +2047,33 @@ landing inside Sponberg's own 10–15 % rule (`D-AMZ-4`, central; swept later); 
 `exports/amazon_mast.{stl,step}`; 7 tests; geometry suite 56 green. (build+export **0.3 s**
 measured; `just example 55_amazon_mast` regenerates. Spec/plan: `docs/specs/04-amazon-baseline/`.)
 
+### Phase X2 — Amazon as-built mast mass estimate (2026-06-17, `R-AMZ-3`) — the headline
+
+**Estimated the number Sponberg never published: Amazon's two masts ≈ 1290 kg (~646 kg/mast),
+band 1020–1625 kg — and the model self-validates against his own drawing.** New
+`structural/amazon_sizing.py` reproduces Amazon as he built it (carbon **box spar** inside the
+frozen ellipse + glass LE/TE fairings as non-structural mass) and as he sized it (design = 2.5 ×
+RM 251 = 627 kN·m/mast; wall = max(strength at the cap allowable, his **t ≥ 0.03·panel** section-
+shape floor); tapered; the heeling moment bends the **weak/thickness** axis). **Headline (central):
+carbon box 418 + round stock 124 + glass fairings 104 = 646 kg/mast → 1291 kg both masts.**
+**Model validation:** the sized **root wall = 13.5 mm reproduces Sponberg's "12.7 mm box" drawing
+annotation** to 0.8 mm — independent confirmation the construction model is right. **Governing
+physics:** the **entire wing is buckling-floor-governed** (his t/ID rule), *not* strength —
+exactly his emphasis ("fatter sections buckle less"); strength never binds. **Verification:** FEA
+deflection (`solve_frame_journal`, cap axial laminate modulus 125 GPa) = **2.19 m (10 % of height)
+at RM_max** — large because Amazon's mast is **buckling-sized and intentionally flexible; Sponberg
+does NOT size for deflection** (he checks it at F4–5 sailing load, ~0.5 m, and accepts the flex);
+closed-form cap-compression **local-buckling λ = 2.17 at the operating load** (RM_max — the boat
+capsizes before it can reach the 2.5× notional ultimate, so that is the physical max), a healthy
+reserve from the t/ID floor. **Band 1020–1625 kg** over the flagged inputs (box fill 0.55–0.65,
+σ_allow 450–800 MPa, fairing 15–40 %, bury ±). **Cross-cutting insight for X4:** because Amazon is
+buckling-floor-sized and Sponberg imposes no deflection limit, his mast is very flexible — the
+apples-to-apples benchmark (`D-AMZ-2`) therefore also carries no strict deflection cap, so we beat
+him on *mass at his strength+buckling criteria*, not by out-stiffening. No analytic gradient in this
+module (forward estimate) → Article IX FD-validation N/A. (7 tests; estimate runs **0.1 s** measured;
+`just example 56_amazon_mass_estimate`. Converged-mesh *eigen* buckling deferred to X3/X4 on the
+meshed box-spar model where the geometric-stiffness machinery applies — Article III.)
+
 ## Decisions log
 
 | Decision | Choice |
@@ -2058,6 +2085,7 @@ measured; `just example 55_amazon_mast` regenerates. Spec/plan: `docs/specs/04-a
 | Beam layout (early) | Even arc-length spacing; frame-field-driven in Phase F. |
 | Build-out strategy | Thin end-to-end spike (Phases A–C), then deepen (D+). |
 | Operational-scenario framework (2026-06-17, `R-AE-1/2/7`) | Made operational loads **extensible**: `OPERATIONAL_SCENARIOS` registry of frozen `OperationalScenario`; **add a case = append one entry**, the whole pipeline (bending/torque/category/reserve/eigen/governing) re-runs. Ceiling is a tagged union (`HeelingCeiling.rm_capped()`/`q_limited()`) **coupled via `min(RM, aero)`** (equilibrium always caps — Article IV). Governing chosen **by magnitude** among `governs_eligible` cases → an added heavier case can seize it (demo: OP-3 → 195 kN·m governs). `op1/op2` = registry lookups; basis byte-identical. Chosen by a 3-proposal design panel. 6 tests; suite 283→289. New ceiling physics = one new `CeilingKind`. |
+| Amazon X2 — his mast mass estimate (2026-06-17, `R-AMZ-3`) | `structural/amazon_sizing.py` reproduces Amazon's construction + Sponberg's sizing → **two masts ≈ 1290 kg (646 kg/mast), band 1020–1625**. Self-validates: sized **root wall 13.5 mm ≈ his 12.7 mm box**. **Buckling-floor-governed** (t/ID rule) the whole wing, not strength; local-buckling λ 2.17 at operating load; FEA deflection 2.19 m at RM_max (buckling-sized → intentionally flexible; he sizes no deflection cap). Apples-to-apples benchmark (`D-AMZ-2`) thus also has no strict deflection cap. 7 tests. |
 | Sponberg *Project Amazon* prior-art baseline (2026-06-17, user-requested) | Captured the closest published prior art (twin free-standing rotating carbon wingmasts) from primary sources → `docs/respec_research/sponberg_amazon_prior_art.md`. Baseline: **2.5/1 ellipse (t/c 0.40), 750×300 mm at deck**, entasis taper, carbon box spar + glass fairings, **deck roller + heel roller/thrust bearings**, load = **FoS × RM_max**, **t/ID ≥ 0.03** anti-buckling floor. **Independently confirms** our FoS 3.0, ~0.5 knockdown, operational-only deflection check, and journal-BC architecture. **Action flagged:** basis L49 mast **t/c 0.18 should be revised toward 0.40–0.80** (Sponberg's band; cf. our first-order t/c ≳ 0.57) — pending the geometry reconsideration. **Open:** Amazon mast **mass** unpublished. |
 | Geometry scale: wingsail ≠ wingmast (2026-06-17, user-caught) | The Phase-G structural geometry was built at the **4 m wingsail** chord; the bare **wingmast** structure is **~0.5–1.0 m**. Re-targeted `RotatingMastSpec`/`GEOMETRY_PARAMS` to the mast chord (root/tip 1.0/0.6 m, swept DV 0.5–1.0; box-spar blend 15 mm / walls 4–3 mm / stock 0.16 m dia); dropped the redundant geometry `c_mast`. Mast now slender 22 m × 1 m (AR ~25), export 1.6 m³ (was 25.4). The **wingsail** (~3–4 m) is the **aero** surface (Phase A), not the structure. Machinery unchanged — only the scale was wrong. Geometry suite green. |
 | Phase A / gate D-2 (2026-06-17, `R-AE-1…7`) | **D-2 CONDITIONALLY resolved:** reliable-feathering baseline → **operational (OP-2 ~160 kN·m) governs at central inputs**; SURV-1f (~471) a reduced-FoS fault check. Analytical model (`aero/feathering.py`): stable (pivot 0.25c fwd of effective AC 0.35c via vane); **derived breakevens** — flips to survival_fault for RM ≤ ~161 kN·m (`D-1`) or c_mast ≥ ~1.24 m (`D-4`), and requires steady AoA ≤ crossover ~3.7°. **VIV NOT a feathered concern** (corrected: Scruton ~60 robust using the thickness length-scale; the earlier ~4 was a stock-diameter artifact). Operational/survival envelopes reproduce basis §3–§4 to the digit. Analytical (`D-AE-c/d`); CFD a flagged follow-up. Found by the Phase-A review (10 fixes). Suite 256→**274**. Remaining A.2/A.5/A.6/A.7. |

@@ -83,6 +83,6 @@ recorded finding with measured wall-clock. **The OML is frozen at Amazon's geome
 
 ## Sequence & status
 - [x] X1 geometry + export + tests — `amazon_mast.py`, 0.000 mm station fidelity, valid solid, 7 tests (2026-06-17)
-- [ ] X2 mass estimate + eigen-verify + finding (**the headline deliverable: his mass**)
+- [x] X2 mass estimate — **two masts ≈ 1290 kg (band 1020–1625)**; root wall 13.5 mm validates vs his 12.7 mm box; buckling-floor-governed; 7 tests (2026-06-17). Eigen-verify deferred to X3/X4 (meshed model).
 - [ ] X3 3- & 4-spar rebuild + fit + sized mass
 - [ ] X4 optimize + eigen-verify + beat-margin finding
