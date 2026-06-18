@@ -2001,6 +2001,35 @@ all correct + parametric — only the fed-in scale was wrong.** Geometry suite g
 box-spar tests rescaled. Spec param table + `rotating_mast` docstring updated. (`just example
 54_rotating_wingmast` regenerates the corrected mast.)
 
+### Sponberg *Project Amazon* prior-art baseline (2026-06-17, user-requested)
+
+**Captured the closest published prior art — Eric Sponberg's twin free-standing rotating carbon
+wingmasts (*Project Amazon*, Open-60 cat-ketch) — from primary sources, as a design baseline.**
+Full dossier: `docs/respec_research/sponberg_amazon_prior_art.md`. Two of Sponberg's own primary
+documents (PBB No. 55, 1998; SNAME *Marine Technology* 37(2), 2000) **agree to the digit**, plus
+his methodology paper (Chesapeake 1983 + 2011 addendum). **The geometry:** elliptical wing mast,
+**2.5/1 (t/c 0.40), 750 mm × 300 mm at the deck**, constant 2.5/1 the full length, **modified
+entasis** taper (max section at the partners), 25.6 m mast / 21.9 m sail track (≈ our 22 m), prepreg
+**carbon box spar + bonded glass LE/TE fairings**, rounding to OD 500/450 for **two bearings —
+deck roller (radial) + heel roller+thrust (radial+axial)**. **The method:** load = boat **RM_max**
+(Amazon 251 kN·m/mast), moment constant partners→gooseneck then linear to zero at both ends, design
+= **FoS × RM_max**, local-buckling floor **t/ID ≥ 0.03** for a 50–80 % UD laminate. **Why this
+matters — four independent confirmations of our constitution/basis** (not circular; arrived at
+separately): (1) **FoS 3.0** — Sponberg's *mature* value (Amazon used 2.5; he moved to 3.0 by 2011),
+matching basis `R-LOAD`/FoS≥3.0; (2) **~0.5 material knockdown** — "use half the ideal laminate
+properties", matching our 67.5 GPa isotropic-equiv; (3) **deflection checked at OPERATIONAL (F4–5)
+load, not max RM** — matching Article IV serviceability-operational-only; (4) the **journal-BC
+architecture** (two bearings, axial at the heel) is exactly how Amazon was built. **The one number
+that should change:** basis L49's mast section **t/c 0.18 is thinner than any free-standing mast
+Sponberg builds** (his band 0.40–0.80); combined with our first-order t/c ≳ 0.57, the deep-section
+direction now has empirical prior-art backing — and ours can go *deeper* than Amazon's 0.40 because
+the soft wingsail carries the aero (Amazon's mast *is* the aero surface, capped at 3.0/1). **Open:
+mast MASS is unpublished in both primary papers** (Amazon's build weights were never logged) — the
+one baseline number not recoverable from the sources. Negative-for-direct-reuse but
+positive-for-validation: confirms loads/method/architecture, not a mass figure. (Research:
+9-agent web sweep+synthesis **15.4 min** measured / 473 k tokens; + direct visual read of both
+25-page primary PDFs. No compute run.)
+
 ## Decisions log
 
 | Decision | Choice |
@@ -2012,6 +2041,7 @@ box-spar tests rescaled. Spec param table + `rotating_mast` docstring updated. (
 | Beam layout (early) | Even arc-length spacing; frame-field-driven in Phase F. |
 | Build-out strategy | Thin end-to-end spike (Phases A–C), then deepen (D+). |
 | Operational-scenario framework (2026-06-17, `R-AE-1/2/7`) | Made operational loads **extensible**: `OPERATIONAL_SCENARIOS` registry of frozen `OperationalScenario`; **add a case = append one entry**, the whole pipeline (bending/torque/category/reserve/eigen/governing) re-runs. Ceiling is a tagged union (`HeelingCeiling.rm_capped()`/`q_limited()`) **coupled via `min(RM, aero)`** (equilibrium always caps — Article IV). Governing chosen **by magnitude** among `governs_eligible` cases → an added heavier case can seize it (demo: OP-3 → 195 kN·m governs). `op1/op2` = registry lookups; basis byte-identical. Chosen by a 3-proposal design panel. 6 tests; suite 283→289. New ceiling physics = one new `CeilingKind`. |
+| Sponberg *Project Amazon* prior-art baseline (2026-06-17, user-requested) | Captured the closest published prior art (twin free-standing rotating carbon wingmasts) from primary sources → `docs/respec_research/sponberg_amazon_prior_art.md`. Baseline: **2.5/1 ellipse (t/c 0.40), 750×300 mm at deck**, entasis taper, carbon box spar + glass fairings, **deck roller + heel roller/thrust bearings**, load = **FoS × RM_max**, **t/ID ≥ 0.03** anti-buckling floor. **Independently confirms** our FoS 3.0, ~0.5 knockdown, operational-only deflection check, and journal-BC architecture. **Action flagged:** basis L49 mast **t/c 0.18 should be revised toward 0.40–0.80** (Sponberg's band; cf. our first-order t/c ≳ 0.57) — pending the geometry reconsideration. **Open:** Amazon mast **mass** unpublished. |
 | Geometry scale: wingsail ≠ wingmast (2026-06-17, user-caught) | The Phase-G structural geometry was built at the **4 m wingsail** chord; the bare **wingmast** structure is **~0.5–1.0 m**. Re-targeted `RotatingMastSpec`/`GEOMETRY_PARAMS` to the mast chord (root/tip 1.0/0.6 m, swept DV 0.5–1.0; box-spar blend 15 mm / walls 4–3 mm / stock 0.16 m dia); dropped the redundant geometry `c_mast`. Mast now slender 22 m × 1 m (AR ~25), export 1.6 m³ (was 25.4). The **wingsail** (~3–4 m) is the **aero** surface (Phase A), not the structure. Machinery unchanged — only the scale was wrong. Geometry suite green. |
 | Phase A / gate D-2 (2026-06-17, `R-AE-1…7`) | **D-2 CONDITIONALLY resolved:** reliable-feathering baseline → **operational (OP-2 ~160 kN·m) governs at central inputs**; SURV-1f (~471) a reduced-FoS fault check. Analytical model (`aero/feathering.py`): stable (pivot 0.25c fwd of effective AC 0.35c via vane); **derived breakevens** — flips to survival_fault for RM ≤ ~161 kN·m (`D-1`) or c_mast ≥ ~1.24 m (`D-4`), and requires steady AoA ≤ crossover ~3.7°. **VIV NOT a feathered concern** (corrected: Scruton ~60 robust using the thickness length-scale; the earlier ~4 was a stock-diameter artifact). Operational/survival envelopes reproduce basis §3–§4 to the digit. Analytical (`D-AE-c/d`); CFD a flagged follow-up. Found by the Phase-A review (10 fixes). Suite 256→**274**. Remaining A.2/A.5/A.6/A.7. |
 | Phase G geometry (2026-06-16, `R-GG-1…6`) | Parametric twin rotating-wingmast CAD **partially closing `G-1`** (OML assembly + validated 2-D section set; walled 3-D box-spar/shell assembly deferred to Phase S). Kulfan/CST airfoils via AeroSandbox (NACA-0018 to 1.7e-4); `RotatingMastSpec` is a **new forward module** reusing the audited `ruled` loft/transition/ordering (composition, not WingSpec mutation); **box spars = chordwise partition** (≥3 simple-convex filleted cells [tested], longeron void ∝ blend_radius², section-set+loft, no OCC booleans; walls/voids are placeholder *areas*, shell polyline = OML); `check_fit` validates member simplicity + OML containment + web clearance, bites on blend/spar_wall/shell_wall inflation; 15-param table with bounds+increments. `D-5` entasis = **sin-bow loft-axis offset**. Example `54`; suite 217→**251** then +fixes. Feeds Phases A/S. **A 32-agent adversarial review found 18 defects (3 high) — all fixed (addendum).** |
