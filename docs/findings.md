@@ -2132,6 +2132,29 @@ confirmation — flagged follow-up — but the governing local mode is the close
 panel check, verified. 9 tests (8 fast + 1 `sizing`). (optimize wall **360 s** measured for the two
 scenarios × 3 spar counts, DE; `just example 58_amazon_beat` regenerates.)
 
+### Phase X4 closure — eigen-verify the governing cap-panel buckling (2026-06-17, `R-AMZ-5`, Article III)
+
+**Closed the owed converged-mesh eigen verification — and it turned into a textbook Article III
+result.** New `structural/amazon_eigen.py` eigen-checks the optimized mast's governing buckling
+mode (the cap panel at z=18.2 m, sized to λ=1.5) two independent ways: **(1) the exact analytical
+orthotropic simply-supported plate eigenvalue** (`σ_cr = 2π²·K·(t/b)²` IS the exact eigenvalue of
+the sin(mπx/a)·sin(πy/b) mode) — **= 1.500, confirming the sizer's closed form to the digit**; and
+**(2) a converged-mesh shell-FEA eigen** on the audited path (laminate DKT+CST element +
+membrane-stress geometric stiffness + dense `linear_buckling`), **mesh-converged 1.855→1.851 across
+ny 8→24**. **The finding:** the FEA's **linear-w geometric stiffness is unconservatively overstiff
+(+23 %)** for this high-D11/D22 (3.3) cap — *exactly* the "coarse eigen is unconservatively
+overstiff" failure Article III warns about, here in the **Kσ formulation, not the mesh** (the mesh
+is converged). So feasibility is judged on the **conservative exact/closed-form floor (λ = 1.50 ≥
+1.5)**; the FEA only confirms *more* margin (1.85), never less. **Verdict: the optimized design is
+buckling-feasible — Article III closed.** Sanity-anchored: the same FEA function reproduces the
+isotropic SS-plate kc=4 reference (≤6 %), so the +23 % is genuinely the orthotropic-Kσ
+approximation. (Eigen check runs **2.1 s** measured; `just example 59_amazon_eigen_verify`; 3 tests
+[2 fast + 1 `sizing`].) This **supersedes the "converged-mesh eigen deferred" caveat** in the X2/X3/X4
+findings — the governing local mode is now eigen-verified by the exact plate eigenvalue + an
+overstiff-flagged FEA cross-check. (A full *whole-mast* shell eigen, capturing any global
+lateral-torsional mode, remains a possible future check, but the local cap-panel mode is the one
+the design is sized to and it is closed.)
+
 ## Decisions log
 
 | Decision | Choice |

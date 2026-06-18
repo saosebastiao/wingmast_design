@@ -85,4 +85,5 @@ recorded finding with measured wall-clock. **The OML is frozen at Amazon's geome
 - [x] X1 geometry + export + tests — `amazon_mast.py`, 0.000 mm station fidelity, valid solid, 7 tests (2026-06-17)
 - [x] X2 mass estimate — **two masts ≈ 1290 kg (band 1020–1625)**; root wall 13.5 mm validates vs his 12.7 mm box; buckling-floor-governed; 7 tests (2026-06-17). Eigen-verify deferred to X3/X4 (meshed model).
 - [x] X3 3- & 4-spar rebuild + fit + sized mass — **3 spars 526 kg/mast (−18.5 % vs his 646)** (buckling-rigorous), both manufacturable; composite section; 5 tests (2026-06-17)
-- [x] X4 optimize — **−8.8 % stiffness-matched (589) / −27.6 % mass-optimal (467) kg/mast**, 3 spars, orthotropic cap-panel buckling λ=1.5; 4 tests (2026-06-17). Converged-mesh shell eigen = flagged follow-up.
+- [x] X4 optimize — **−8.8 % stiffness-matched (589) / −27.6 % mass-optimal (467) kg/mast**, 3 spars, orthotropic cap-panel buckling λ=1.5; 4 tests (2026-06-17).
+- [x] X4 eigen closure — governing cap panel eigen-verified: **exact analytical λ=1.50** (confirms closed form) + converged-mesh shell-FEA (overstiff +23 %, Article III); buckling-feasible. `amazon_eigen.py`, 3 tests (2026-06-17).
