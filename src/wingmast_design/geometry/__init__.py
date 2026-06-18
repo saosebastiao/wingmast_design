@@ -1,6 +1,16 @@
 from .airfoil import naca_00xx_coords, naca_00xx_thickness
 from .kulfan import CSTAirfoil, blend, fit_cst, naca0018_cst
 from .rotating_mast import RotatingMastSpec, build_rotating_mast_solid
+from .amazon_mast import (
+    AMAZON_DESIGN_MOMENT_NM,
+    AMAZON_FOS,
+    AMAZON_RM_NM,
+    AMAZON_STATIONS_MM,
+    AMAZON_TC,
+    AmazonMastSpec,
+    build_amazon_mast_solid,
+    ellipse_coords,
+)
 from .box_spars import (
     BoxSparLayout,
     LongeronChannel,
@@ -27,6 +37,14 @@ __all__ = [
     "naca0018_cst",
     "RotatingMastSpec",
     "build_rotating_mast_solid",
+    "AmazonMastSpec",
+    "build_amazon_mast_solid",
+    "ellipse_coords",
+    "AMAZON_STATIONS_MM",
+    "AMAZON_TC",
+    "AMAZON_RM_NM",
+    "AMAZON_FOS",
+    "AMAZON_DESIGN_MOMENT_NM",
     "BoxSparLayout",
     "LongeronChannel",
     "SparSection",

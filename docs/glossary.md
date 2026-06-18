@@ -154,3 +154,5 @@ lookup so terms aren't re-derived.
 | **LOA** | **L**ength **O**ver**A**ll. |
 | **Cat 3 / Cat 5** | Saffir-Simpson hurricane **Cat**egories (~100 kt / ~137 kt) — the survival wind speeds. |
 | **c_mast / A_mast** | Bare-wingmast chord (≈0.5–1 m, `D-4`) / its planform area `c_mast·span` (≈22 m²) — sets the survival load. |
+| **Project Amazon** | Eric Sponberg's Open-60 cat-ketch with **twin free-standing rotating carbon wingmasts** (1998) — the closest published prior art. Baseline: 2.5/1 ellipse (t/c 0.40), entasis taper, carbon box spar + glass fairings, deck-roller + heel-roller/thrust bearings, design = FoS×RM_max, t/ID ≥ 0.03. Dossier: `docs/respec_research/sponberg_amazon_prior_art.md`. |
+| **Sponberg method** | Free-standing mast sizing: load = boat **RM_max** (constant partners→gooseneck, tapered to zero at both ends), design = FoS (3.0) × RM_max, ~½ knockdown on ideal laminate, deflection checked at **operational** (F4–5) load not max RM, local-buckling floor **t/ID ≥ 0.03** for a 50–80 % UD laminate. |

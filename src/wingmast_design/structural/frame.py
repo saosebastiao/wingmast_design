@@ -117,20 +117,13 @@ def _element_rotation(pi: np.ndarray, pj: np.ndarray) -> tuple[np.ndarray, float
     return np.vstack([ex, ey, ez]), L
 
 
-def solve_frame(
-    nodes: np.ndarray,
-    elements: np.ndarray,
-    sections: list[BeamSection],
-    *,
-    E: float,
-    G: float,
-    fixed_nodes: np.ndarray,
-    loads: np.ndarray,
-) -> FrameResult:
-    """Solve K u = f for a clamped 3D frame; recover per-element internal forces.
+def assemble_frame_K(
+    nodes: np.ndarray, elements: np.ndarray, sections: list[BeamSection], *, E: float, G: float,
+) -> tuple[sp.csr_matrix, list[np.ndarray], list[np.ndarray]]:
+    """Assemble the global (ndof, ndof) frame stiffness; returns (K, transforms, klocals).
 
-    `fixed_nodes` are fully clamped (all 6 DOF). `loads` is (n_nodes, 6).
-    """
+    Factored out of `solve_frame` so alternative boundary conditions (e.g. the journal-bearing
+    springs in `structural.journal_bc`) can augment the same K before solving."""
     n_nodes = nodes.shape[0]
     n_elem = elements.shape[0]
     if len(sections) != n_elem:
@@ -161,6 +154,44 @@ def solve_frame(
                 vals.append(kg[a_, b_])
 
     K = sp.coo_matrix((vals, (rows, cols)), shape=(ndof, ndof)).tocsr()
+    return K, transforms, klocals
+
+
+def recover_frame_forces(
+    u: np.ndarray, elements: np.ndarray, transforms: list[np.ndarray], klocals: list[np.ndarray],
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Per-element (axial, bending, torsion) from a solved displacement vector."""
+    n_elem = elements.shape[0]
+    axial = np.zeros(n_elem)
+    bending = np.zeros(n_elem)
+    torsion = np.zeros(n_elem)
+    for e in range(n_elem):
+        i, j = int(elements[e, 0]), int(elements[e, 1])
+        ue = np.r_[u[6 * i:6 * i + 6], u[6 * j:6 * j + 6]]
+        floc = klocals[e] @ (transforms[e] @ ue)
+        axial[e] = floc[6]
+        bending[e] = max(np.hypot(floc[4], floc[5]), np.hypot(floc[10], floc[11]))
+        torsion[e] = floc[9]
+    return axial, bending, torsion
+
+
+def solve_frame(
+    nodes: np.ndarray,
+    elements: np.ndarray,
+    sections: list[BeamSection],
+    *,
+    E: float,
+    G: float,
+    fixed_nodes: np.ndarray,
+    loads: np.ndarray,
+) -> FrameResult:
+    """Solve K u = f for a clamped 3D frame; recover per-element internal forces.
+
+    `fixed_nodes` are fully clamped (all 6 DOF). `loads` is (n_nodes, 6).
+    """
+    n_nodes = nodes.shape[0]
+    K, transforms, klocals = assemble_frame_K(nodes, elements, sections, E=E, G=G)
+    ndof = 6 * n_nodes
 
     f = loads.reshape(-1).astype(float)
     if len(fixed_nodes):
@@ -174,17 +205,7 @@ def solve_frame(
     u[free] = spla.spsolve(Kff, f[free])
     disp = u.reshape(n_nodes, 6)
 
-    axial = np.zeros(n_elem)
-    bending = np.zeros(n_elem)
-    torsion = np.zeros(n_elem)
-    for e in range(n_elem):
-        i, j = int(elements[e, 0]), int(elements[e, 1])
-        ue = np.r_[u[6 * i:6 * i + 6], u[6 * j:6 * j + 6]]
-        floc = klocals[e] @ (transforms[e] @ ue)
-        axial[e] = floc[6]  # force at node j along local x; tension positive
-        bending[e] = max(np.hypot(floc[4], floc[5]), np.hypot(floc[10], floc[11]))
-        torsion[e] = floc[9]
-
+    axial, bending, torsion = recover_frame_forces(u, elements, transforms, klocals)
     return FrameResult(displacements=disp, axial_force=axial,
                        bending_moment=bending, torsion=torsion)
 
