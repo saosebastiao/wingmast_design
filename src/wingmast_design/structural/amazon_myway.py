@@ -28,8 +28,43 @@ import numpy as np
 
 from ..geometry.amazon_mast import AmazonMastSpec
 from ..geometry.box_spars import BoxSparLayout, longeron_void_area
-from ..materials.unidir import T800_EPOXY, UDPly, laminate_stiffness
+from ..materials.unidir import (
+    T800_EPOXY,
+    UDPly,
+    laminate_stiffness,
+    reduced_stiffness_Q,
+    transformed_Qbar,
+)
 from .amazon_sizing import AmazonSizingParams, design_moment_at_z, round_props, size_wall_at_z
+
+
+def balanced_helical(ply: UDPly, helix_deg: float) -> tuple[float, float, float]:
+    """Balanced ±θ filament-wound laminate (the wound shell). Returns:
+
+      * **E_x** [Pa] — axial modulus (the ± pair cancels extension–shear coupling, so it stays
+        near E1 at low θ: ~98 % at 5°, ~92 % at 10°, ~80 % at 15°);
+      * **K** [Pa, per unit thickness] — orthotropic buckling coefficient √(D11·D22)+D12+2·D66;
+      * **strength_frac** — first-ply axial design-strength fraction vs the 0° fibre value. The
+        balance suppresses the per-ply matrix shear, so strength holds far better than a single
+        off-axis ply would (~99 % at 5°, ~84 % at 10°, then transverse-limited: ~39 % at 15°).
+    """
+    Q = reduced_stiffness_Q(ply)
+    th = np.radians(float(helix_deg))
+    c, s = np.cos(th), np.sin(th)
+    Qb = 0.5 * (transformed_Qbar(Q, float(helix_deg)) + transformed_Qbar(Q, -float(helix_deg)))
+    Ex = Qb[0, 0] - Qb[0, 1] ** 2 / Qb[1, 1]
+    Du = Qb / 12.0                                              # smeared per-unit-thickness D
+    K = float(np.sqrt(Du[0, 0] * Du[1, 1]) + Du[0, 1] + 2.0 * Du[2, 2])
+    # first-ply axial strength (max-stress), laminate-constrained (γ_xy = 0 for balanced ±θ)
+    nuxy = Qb[0, 1] / Qb[1, 1]
+    ex = 1.0 / Ex
+    ey = -nuxy * ex
+    e1, e2, g12 = ex * c * c + ey * s * s, ex * s * s + ey * c * c, 2.0 * (ey - ex) * s * c
+    s1, s2, t12 = Q @ np.array([e1, e2, g12])                   # per unit applied σx
+    cands = [ply.Xt_Pa / abs(s1) if s1 else 1e30,
+             ply.Yt_Pa / abs(s2) if s2 else 1e30,
+             ply.S12_Pa / abs(t12) if t12 else 1e30]
+    return float(Ex), K, float(min(cands) / ply.Xt_Pa)
 
 
 @dataclass(frozen=True)
@@ -44,7 +79,6 @@ class MyWayParams:
     t_shell: float = 0.003                # FW outer shell (manufacturing min, X3)
     cap_t_min: float = 0.002              # cap manufacturing floor
     sigma_allow_cap_Pa: float = 600.0e6   # 0°-dominated cap axial allowable (~½ knockdown)
-    sigma_allow_shell_Pa: float = 540.0e6 # near-0° FW shell allowable (small low-angle-helical knockdown)
     buckle_t_over_panel: float = 0.03     # geometric section-shape floor (a lower bound)
     buckle_sf: float = 1.5                # orthotropic panel-buckling SF at the operating load (λ ≥ 1.5)
     rho: float = 1600.0                   # carbon/epoxy density
@@ -52,35 +86,38 @@ class MyWayParams:
     rm_Nm: float = 251.0e3
     n_int: int = 400
     ply: UDPly = T800_EPOXY
-    layup_f0: float = 0.70                # cap layup (0° / ±45 / 90)
+    layup_f0: float = 0.70                # cap layup (0° / ±45 / 90) — LAID, can be true 0°
     layup_f45: float = 0.15
     layup_f90: float = 0.15
-    # FW shell: near-0° (low-angle helical ~5–15° approximates 0° — windable, no true 0° pass);
-    # at the OML extreme fibre it is a PRIMARY bending element, not a weak fairing.
-    shell_f0: float = 0.80
-    shell_f45: float = 0.10
-    shell_f90: float = 0.10
+    # FW shell: a balanced ±θ helical (validated: behaves near-0° for BOTH stiffness and strength
+    # at a low helix angle — the ± pair cancels the per-ply matrix shear). The helix angle is a DV.
+    shell_helix_deg: float = 10.0
 
     @property
     def design_moment_Nm(self) -> float:
         return self.fos * self.rm_Nm
 
     def moduli(self) -> tuple[float, float]:
-        """(cap axial modulus, shell axial modulus) [Pa] from the two laminates."""
+        """(cap axial modulus, shell axial modulus) [Pa]."""
         e_cap, e_sh, _, _ = self.props()
         return e_cap, e_sh
 
     def props(self) -> tuple[float, float, float, float]:
         """(E_cap, E_shell, K_cap, K_shell): axial moduli [Pa] + orthotropic panel-buckling
-        coefficients ``K = √(D11·D22) + D12 + 2·D66`` (per unit thickness) — K accounts for the
-        transverse softness of a 0°-rich panel (the off-axis plies raise D22/D66, helping buckling)."""
-        def _lam(f0, f45, f90):
-            A, D, _ = laminate_stiffness(self.ply, f0=f0, f45=f45, f90=f90, thickness=1.0)
-            K = float(np.sqrt(D[0, 0] * D[1, 1]) + D[0, 1] + 2.0 * D[2, 2])
-            return 0.9 * float(A[0, 0]), K
-        e_cap, k_cap = _lam(self.layup_f0, self.layup_f45, self.layup_f90)
-        e_sh, k_sh = _lam(self.shell_f0, self.shell_f45, self.shell_f90)
-        return e_cap, e_sh, k_cap, k_sh
+        coefficients ``K = √(D11·D22)+D12+2·D66`` (per unit thickness). Cap = laid 0/±45/90;
+        shell = balanced ±``shell_helix_deg`` filament-wound."""
+        A, D, _ = laminate_stiffness(self.ply, f0=self.layup_f0, f45=self.layup_f45,
+                                     f90=self.layup_f90, thickness=1.0)
+        e_cap = 0.9 * float(A[0, 0])
+        k_cap = float(np.sqrt(D[0, 0] * D[1, 1]) + D[0, 1] + 2.0 * D[2, 2])
+        e_sh, k_sh, _ = balanced_helical(self.ply, self.shell_helix_deg)
+        return e_cap, 0.9 * e_sh, k_cap, k_sh
+
+    def shell_allow_Pa(self) -> float:
+        """Shell axial design allowable = cap allowable × the helix first-ply strength fraction
+        (validated balanced-helical model — preserved to ~10°, transverse-limited beyond)."""
+        _, _, frac = balanced_helical(self.ply, self.shell_helix_deg)
+        return self.sigma_allow_cap_Pa * frac
 
 
 def _shell_integrals(oml: np.ndarray) -> tuple[float, float]:
@@ -143,7 +180,7 @@ def myway_section(z: float, spec: AmazonMastSpec, p: MyWayParams,
     m_op = design_moment_at_z(z, spec, p.rm_Nm)                    # operating moment (RM_max)
     # --- composite STRENGTH: EI must protect the 0° caps (at ±h/2) AND the near-0° shell (±t/2) ---
     EI_req = max(E_cap * m * (h / 2.0) / p.sigma_allow_cap_Pa,
-                 E_shell * m * (thick / 2.0) / p.sigma_allow_shell_Pa) if m > 0 else 0.0
+                 E_shell * m * (thick / 2.0) / p.shell_allow_Pa()) if m > 0 else 0.0
     EI_fixed = E_shell * I_shell + E_shell * I_web + E_cap * I_long
     I_caps_need = max(0.0, (EI_req - EI_fixed) / E_cap)
     t_strength = I_caps_need / (2.0 * w_box * (h / 2.0) ** 2) if w_box > 0 else 0.0
@@ -237,7 +274,7 @@ def estimate_myway_mass(spec: AmazonMastSpec, p: MyWayParams,
         gov_count[gov] = gov_count.get(gov, 0) + 1
         if i == 0:
             root_cap_mm = t_cap * 1e3
-        shell_util = max(shell_util, sec.shell_sigma / p.sigma_allow_shell_Pa)
+        shell_util = max(shell_util, sec.shell_sigma / p.shell_allow_Pa())
         cap_util = max(cap_util, sec.cap_sigma / p.sigma_allow_cap_Pa)
         min_buckle_lambda = min(min_buckle_lambda, sec.panel_buckle_lambda)
     wing_kg = float(np.trapezoid(dm, z_wing))

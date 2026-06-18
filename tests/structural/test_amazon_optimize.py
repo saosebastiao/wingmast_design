@@ -43,7 +43,7 @@ def test_objective_penalizes_deflection_cap():
     """The optional deflection cap penalizes over-flexible candidates."""
     spec = AmazonMastSpec()
     base = MyWayParams()
-    x = np.array([0.45, 0.88, 0.0025, 0.003])    # the floppy mass-optimal point
+    x = np.array([0.45, 0.88, 0.0025, 0.003, 8.0, 0.70])   # floppy mass-optimal point (6 DVs)
     free = _objective(x, spec, 3, base, None)
     capped = _objective(x, spec, 3, base, 1.5)   # cap below its ~3.1 m deflection
     assert free < 1000.0                          # feasible mass

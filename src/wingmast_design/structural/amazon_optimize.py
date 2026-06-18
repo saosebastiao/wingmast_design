@@ -24,13 +24,16 @@ from .amazon_myway import (
     myway_tip_deflection,
 )
 
-# design vector: [box_frac_chord, box_frac_thick, t_shell, t_web]
-_BOUNDS = [(0.45, 0.68), (0.50, 0.90), (0.002, 0.014), (0.003, 0.008)]
+# design vector: [box_frac_chord, box_frac_thick, t_shell, t_web, shell_helix_deg, cap_f0]
+_BOUNDS = [(0.40, 0.68), (0.50, 0.92), (0.002, 0.016), (0.003, 0.008), (4.0, 18.0), (0.55, 0.80)]
 
 
 def _params(x: np.ndarray, n_spars: int, base: MyWayParams) -> MyWayParams:
+    f0 = float(x[5])
+    off = 0.5 * (1.0 - f0)                                    # balance ±45 / 90 in the cap
     return replace(base, n_spars=n_spars, box_frac_chord=float(x[0]), box_frac_thick=float(x[1]),
-                   t_shell=float(x[2]), t_web=float(x[3]))
+                   t_shell=float(x[2]), t_web=float(x[3]), shell_helix_deg=float(x[4]),
+                   layup_f0=f0, layup_f45=off, layup_f90=off)
 
 
 def _objective(x: np.ndarray, spec: AmazonMastSpec, n_spars: int, base: MyWayParams,
@@ -66,13 +69,15 @@ class BeatResult:
 
 def optimize_myway(spec: AmazonMastSpec, n_spars: int, amazon_per_mast_kg: float,
                    base: MyWayParams | None = None, *, seed: int = 0, defl_cap_m: float | None = None,
-                   maxiter: int = 40, popsize: int = 12) -> BeatResult:
+                   maxiter: int = 40, popsize: int = 12, workers: int = 1) -> BeatResult:
     """Differential-evolution minimisation of per-mast mass for a fixed spar count. Strength +
-    cap-buckling (λ ≥ 1.5) are met by the inner sizer; ``defl_cap_m`` optionally caps deflection."""
+    cap-buckling (λ ≥ 1.5) are met by the inner sizer; ``defl_cap_m`` optionally caps deflection.
+    DV = [box_frac_chord, box_frac_thick, t_shell, t_web, shell_helix_deg, cap_f0]."""
     base = base or MyWayParams()
     opt = differential_evolution(
-        _objective, _BOUNDS, args=(spec, n_spars, base, defl_cap_m), seed=seed, tol=1e-4,
-        maxiter=maxiter, popsize=popsize, polish=True, init="sobol",
+        _objective, _BOUNDS, args=(spec, n_spars, base, defl_cap_m), seed=seed, tol=1e-5,
+        maxiter=maxiter, popsize=popsize, polish=True, init="sobol", workers=workers, updating=
+        ("deferred" if workers != 1 else "immediate"),
     )
     p = _params(opt.x, n_spars, base)
     r = estimate_myway_mass(spec, p, amazon_per_mast_kg=amazon_per_mast_kg)
@@ -88,10 +93,11 @@ def optimize_myway(spec: AmazonMastSpec, n_spars: int, amazon_per_mast_kg: float
 
 def optimize_amazon_beat(spec: AmazonMastSpec | None = None, amazon_per_mast_kg: float = 646.0,
                          *, spar_counts=(3, 4, 5), seed: int = 0, defl_cap_m: float | None = None,
-                         maxiter: int = 40) -> tuple[BeatResult, list[BeatResult]]:
+                         maxiter: int = 40, popsize: int = 12, workers: int = 1
+                         ) -> tuple[BeatResult, list[BeatResult]]:
     """Optimize each spar count and return (best, all) — the headline X4 result."""
     spec = spec or AmazonMastSpec()
     runs = [optimize_myway(spec, n, amazon_per_mast_kg, seed=seed, defl_cap_m=defl_cap_m,
-                           maxiter=maxiter) for n in spar_counts]
+                           maxiter=maxiter, popsize=popsize, workers=workers) for n in spar_counts]
     best = min(runs, key=lambda r: r.mass_per_mast_kg)
     return best, runs

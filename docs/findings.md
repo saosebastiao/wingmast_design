@@ -2155,6 +2155,34 @@ overstiff-flagged FEA cross-check. (A full *whole-mast* shell eigen, capturing a
 lateral-torsional mode, remains a possible future check, but the local cap-panel mode is the one
 the design is sized to and it is closed.)
 
+### Phase X4+ — large optimization with the balanced-helical shell (2026-06-17, `R-AMZ-5`)
+
+**Folding in the validated balanced-helical shell assumption + an expanded design vector + a large
+parallel optimization improves the margin to −32.8 % mass-optimal / −18.7 % stiffness-matched.**
+Two upgrades: **(1) a physics-validated FW shell model** — `amazon_myway.balanced_helical(ply,
+helix_deg)` computes a balanced ±θ wound laminate's axial modulus, buckling K, and **first-ply
+strength fraction** from CLT, confirming the user's point that ±θ "net-zero" winding behaves
+near-0° for *both* stiffness AND strength at a low helix (the ± pair cancels the per-ply matrix
+shear that kills a *single* off-axis ply — strength holds to ~84 % at 10°, transverse-limited
+beyond). E_x = 164/162/151/131 GPa at ±3/5/10/15°. The shell **helix angle is now a design
+variable**. **(2) Expanded DV (6):** box chord/depth fractions, shell + web walls, **shell helix
+angle**, **cap 0° fraction** — optimized by a **large parallel differential-evolution** (popsize 18,
+maxiter 120, 12-way `workers=-1`, 3.3× speedup) over spar counts {3,4,5,6} × two scenarios.
+**Result (both 3 spars, buckling λ = 1.50, eigen-confirmed):**
+- **mass-optimal (Amazon criteria): 434 kg/mast (868 both), −32.8 %** (was 467 / −27.6 %), but
+  floppier (3.07 m at RM_max);
+- **stiffness-matched (deflection ≤ Amazon's 2.19 m): 525 kg/mast (1050 both), −18.7 %** (was 589 /
+  −8.8 % — the bigger gain: the better shell carries deflection far more efficiently).
+**Optimal section:** 3 box spars, **narrow-deep box (0.40c × 0.89t** — caps driven to the
+fit-limited extreme fibre), **80 % 0° caps**, and a smartly-tuned shell — **±4° + thick 5 mm when
+stiffness binds (B)**, ±9° + thin 2 mm when it doesn't (A). The optimizer drove box_frac_chord and
+cap_f0 to their bounds and the helix low — confirming the design wants maximum axial efficiency
+everywhere, with off-axis only where buckling/manufacturability demand it. **Eigen closure holds**
+(exact cap-panel λ 1.50; FEA +30 % overstiff, conservative floor governs). The earlier X4 numbers
+(−27.6/−8.8) used a conservative 80/10/10 shell proxy (E 125 GPa); the helix-validated shell
+(E 151–164) is the more accurate — and more favourable — model. (large DE wall **772 s** measured /
+12-core; `just py runs/amazon_large_optimize.py`.)
+
 ## Decisions log
 
 | Decision | Choice |
