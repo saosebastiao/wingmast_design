@@ -168,6 +168,18 @@ class AmazonMastSpec:
     def total_length(self) -> float:
         return self.sail_track_length + self.below_root_length
 
+    # --- duck-type bridge so the audited box-spar partition + check_fit work unchanged ----
+    # (`box_spars.mast_box_spar_sections` / `fit.check_fit` consume `span`, `_contour(frac)`,
+    #  `chord_at_z`, `rotation_center_xc`). The OML stays frozen — no geometry DV is exposed.
+    @property
+    def span(self) -> float:
+        return self.sail_track_length
+
+    def _contour(self, _frac: float = 0.0) -> np.ndarray:
+        """Unit-chord section contour (constant 2.5:1 ellipse; ``_frac`` unused — the section
+        shape is span-invariant, only the chord scales)."""
+        return ellipse_coords(self.n_airfoil_points // 2)
+
 
 def build_amazon_mast_solid(spec: AmazonMastSpec):
     """Loft the Amazon wing + transition + tapering round stock as one solid (`ruled=True`).

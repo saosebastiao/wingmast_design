@@ -2074,6 +2074,28 @@ module (forward estimate) → Article IX FD-validation N/A. (7 tests; estimate r
 `just example 56_amazon_mass_estimate`. Converged-mesh *eigen* buckling deferred to X3/X4 on the
 meshed box-spar model where the geometric-stiffness machinery applies — Article III.)
 
+### Phase X3 — rebuild Amazon's OML with the project method (2026-06-17, `R-AMZ-4`)
+
+**The project's manufacturing concept beats Sponberg's by ~18 % at first order — before any
+optimization.** New `structural/amazon_myway.py` rebuilds the **frozen** Amazon ellipse with **3
+and 4 filament-wound box spars + co-bonded UD channel longerons + a structural filament-wound
+shell**, sized to the same Amazon loads/criteria. **Both partitions are manufacturable** — the
+audited `box_spar_sections`/`check_fit` run unchanged on the Amazon OML via a thin duck-type bridge
+(`AmazonMastSpec.span`/`_contour`; the OML stays frozen, no geometry DV exposed): 3-spar margin 30
+mm, 4-spar 17 mm (binding at the thin masthead). **Result (first-order):** **3 box spars → 531
+kg/mast (1062 kg both), −17.8 % vs Amazon's 646**; 4 spars → 557 kg (−13.8 %). **3 beats 4** (once
+the buckling floor is met, the extra web outweighs the thinner cap). **Why we win:** closer webs
+shrink the cap panel, so the wall drops **off Amazon's 13.5 mm buckling floor onto the 9.2 mm
+strength requirement** — the material his single 450-mm-wide box "wastes" on section-shape
+stability (strength now governs 65 % of the span vs 0 % for him). **Honest physics caught + fixed:**
+the naive geometric-I section over-stressed the soft FW shell (util 2.2) — corrected to a
+**modulus-weighted composite** (0° cap 112 GPa vs helical shell 52 GPa); the shell, at the extreme
+fibre (±t/2) with the lower allowable, is then the **binding strength constraint (util 1.00)** while
+the caps sit at 0.76 — a real design lever X4 will exploit (cap/shell distribution, box depth).
+**X3 is the starting point, not the optimum — X4 optimizes the internal distribution.** 5 tests;
+example `57_amazon_myway_build` (`just example 57_amazon_myway_build`). (first-order, runs **0.4 s**
+measured; converged-mesh eigen still pending X4 on the meshed model — Article III.)
+
 ## Decisions log
 
 | Decision | Choice |
@@ -2085,6 +2107,7 @@ meshed box-spar model where the geometric-stiffness machinery applies — Articl
 | Beam layout (early) | Even arc-length spacing; frame-field-driven in Phase F. |
 | Build-out strategy | Thin end-to-end spike (Phases A–C), then deepen (D+). |
 | Operational-scenario framework (2026-06-17, `R-AE-1/2/7`) | Made operational loads **extensible**: `OPERATIONAL_SCENARIOS` registry of frozen `OperationalScenario`; **add a case = append one entry**, the whole pipeline (bending/torque/category/reserve/eigen/governing) re-runs. Ceiling is a tagged union (`HeelingCeiling.rm_capped()`/`q_limited()`) **coupled via `min(RM, aero)`** (equilibrium always caps — Article IV). Governing chosen **by magnitude** among `governs_eligible` cases → an added heavier case can seize it (demo: OP-3 → 195 kN·m governs). `op1/op2` = registry lookups; basis byte-identical. Chosen by a 3-proposal design panel. 6 tests; suite 283→289. New ceiling physics = one new `CeilingKind`. |
+| Amazon X3 — rebuild OML, project method (2026-06-17, `R-AMZ-4`) | `structural/amazon_myway.py`: frozen Amazon ellipse, **3 & 4 FW box spars + UD longerons + structural FW shell**, both **manufacturable** (`check_fit` reused via duck-bridge). First-order: **3 spars 531 kg/mast (−17.8 % vs his 646)**, 4 spars 557 (−13.8 %); 3 beats 4. Win = closer webs drop the wall off his 13.5 mm buckling floor onto 9.2 mm strength. Composite (modulus-weighted) section: helical shell (52 GPa) at the extreme fibre is the binding constraint (util 1.00), caps (112 GPa) at 0.76 — an X4 lever. 5 tests. |
 | Amazon X2 — his mast mass estimate (2026-06-17, `R-AMZ-3`) | `structural/amazon_sizing.py` reproduces Amazon's construction + Sponberg's sizing → **two masts ≈ 1290 kg (646 kg/mast), band 1020–1625**. Self-validates: sized **root wall 13.5 mm ≈ his 12.7 mm box**. **Buckling-floor-governed** (t/ID rule) the whole wing, not strength; local-buckling λ 2.17 at operating load; FEA deflection 2.19 m at RM_max (buckling-sized → intentionally flexible; he sizes no deflection cap). Apples-to-apples benchmark (`D-AMZ-2`) thus also has no strict deflection cap. 7 tests. |
 | Sponberg *Project Amazon* prior-art baseline (2026-06-17, user-requested) | Captured the closest published prior art (twin free-standing rotating carbon wingmasts) from primary sources → `docs/respec_research/sponberg_amazon_prior_art.md`. Baseline: **2.5/1 ellipse (t/c 0.40), 750×300 mm at deck**, entasis taper, carbon box spar + glass fairings, **deck roller + heel roller/thrust bearings**, load = **FoS × RM_max**, **t/ID ≥ 0.03** anti-buckling floor. **Independently confirms** our FoS 3.0, ~0.5 knockdown, operational-only deflection check, and journal-BC architecture. **Action flagged:** basis L49 mast **t/c 0.18 should be revised toward 0.40–0.80** (Sponberg's band; cf. our first-order t/c ≳ 0.57) — pending the geometry reconsideration. **Open:** Amazon mast **mass** unpublished. |
 | Geometry scale: wingsail ≠ wingmast (2026-06-17, user-caught) | The Phase-G structural geometry was built at the **4 m wingsail** chord; the bare **wingmast** structure is **~0.5–1.0 m**. Re-targeted `RotatingMastSpec`/`GEOMETRY_PARAMS` to the mast chord (root/tip 1.0/0.6 m, swept DV 0.5–1.0; box-spar blend 15 mm / walls 4–3 mm / stock 0.16 m dia); dropped the redundant geometry `c_mast`. Mast now slender 22 m × 1 m (AR ~25), export 1.6 m³ (was 25.4). The **wingsail** (~3–4 m) is the **aero** surface (Phase A), not the structure. Machinery unchanged — only the scale was wrong. Geometry suite green. |
