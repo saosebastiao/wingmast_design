@@ -22,6 +22,7 @@ Run: `just example 62_amazon_torsion_box`
 """
 from __future__ import annotations
 
+import json
 import time
 from pathlib import Path
 
@@ -46,17 +47,33 @@ from wingmast_design.beams.cross_section import resample_closed_polyline
 from wingmast_design.geometry.amazon_mast import AmazonMastSpec, ellipse_coords
 from wingmast_design.geometry.cells import CellLayout, cell_sections
 
-# ---- build parameters (representative walls; the OML is the frozen Amazon ellipse) -----------
-N_CELLS = 3
+# ---- build parameters. If the as-built re-size has been run (exports/conformal_best.json from
+# `just py runs/conformal_optimize.py`), the cell count / blend / walls / cap schedule are taken
+# from it so the CAD walls ARE the sized walls; otherwise a representative taper is used. --------
 N_ST = 13                      # spanwise stations (loft sections) over the wing
 N_PTS = 96                     # points per cell outline
-BLEND = 0.030                  # cell corner-blend radius → longeron channel size [m]
-T_SHELL = 0.003                # FW outer shell wall [m]
-T_WEB = 0.004                  # cell web wall [m]
 RHO = 1600.0                   # CFRP density [kg/m³]
 
-# representative cap-wall taper (root → masthead); sized schedule is the as-built re-size
-T_CAP_ROOT, T_CAP_TIP = 0.009, 0.0025
+_SIZED = None
+_sized_path = Path(__file__).resolve().parent.parent / "exports" / "conformal_best.json"
+if _sized_path.exists():
+    _SIZED = json.loads(_sized_path.read_text())
+
+if _SIZED:                                                  # sized (as-built re-size)
+    N_CELLS = int(_SIZED["n_cells"])
+    BLEND = float(_SIZED["blend_radius"])
+    T_SHELL = float(_SIZED["t_shell"])
+    T_WEB = float(_SIZED["t_web"])
+    _CAP_Z = np.array([z for z, _ in _SIZED["cap_schedule"]])
+    _CAP_T = np.array([t for _, t in _SIZED["cap_schedule"]])
+    T_CAP_ROOT, T_CAP_TIP = float(_CAP_T[0]), float(_CAP_T[-1])
+else:                                                       # representative fallback
+    N_CELLS = 3
+    BLEND = 0.030
+    T_SHELL = 0.003
+    T_WEB = 0.004
+    _CAP_Z = _CAP_T = np.empty(0)
+    T_CAP_ROOT, T_CAP_TIP = 0.009, 0.0025
 
 CELL_COLORS = [(0.20, 0.55, 0.85), (0.32, 0.72, 0.45), (0.86, 0.45, 0.20),
                (0.70, 0.35, 0.75), (0.40, 0.75, 0.78)]
@@ -116,7 +133,9 @@ def _longeron_poly(xw: float, a: float, b: float, r: float, top: bool, n: int = 
 
 
 def _cap_wall(z: float, span: float) -> float:
-    f = min(max(z / span, 0.0), 1.0)
+    if _CAP_T.size:                              # the SIZED schedule (CAD walls == sizer)
+        return float(np.interp(z, _CAP_Z, _CAP_T))
+    f = min(max(z / span, 0.0), 1.0)             # representative taper
     return T_CAP_ROOT + f * (T_CAP_TIP - T_CAP_ROOT)
 
 
@@ -173,8 +192,15 @@ def main() -> None:
     print(f"  stock:     valid {stock.is_valid}, {stock.volume * RHO:6.0f} kg")
 
     struct = sum(s.volume for s in cells) + sum(s.volume for s in longerons) + shell.volume
-    print(f"\n  structural mass/mast = {struct * RHO:.0f} kg (representative walls; "
-          "sized schedule = the as-built re-size).")
+    if _SIZED:
+        print(f"\n  structural mass/mast = {struct * RHO:.0f} kg (wing, SIZED walls from the as-built "
+              f"re-size; sizer wing ≈ {_SIZED['mass_per_mast_kg'] - 111:.0f} kg + {111} kg stock = "
+              f"{_SIZED['mass_per_mast_kg']:.0f} kg/mast, {_SIZED['vs_amazon_pct']:+.1f}% vs Sponberg).")
+        print("  NB: the CAD hollows each cell with a single (cap) wall, so its webs are thicker than "
+              "the sizer's t_web → CAD wing runs ~10% over the sizer; the cap SCHEDULE matches exactly.")
+    else:
+        print(f"\n  structural mass/mast = {struct * RHO:.0f} kg (representative walls; run "
+              "`just py runs/conformal_optimize.py` for the sized schedule).")
 
     # --- colour, label, export (per-part STL for ParaView + a coloured STEP) -------------------
     out = Path(__file__).resolve().parent.parent / "exports"

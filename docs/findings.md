@@ -2183,6 +2183,67 @@ everywhere, with off-axis only where buckling/manufacturability demand it. **Eig
 (E 151–164) is the more accurate — and more favourable — model. (large DE wall **772 s** measured /
 12-core; `just py runs/amazon_large_optimize.py`.)
 
+### Phase X5 — as-built conformal re-size + terminology fix (2026-06-18, `R-AMZ-7`, user-driven) — honest reversal
+
+**Building the section the way it is actually made — conformal cells that fill the chord, caps on
+the ellipse — the project method is honestly ~9 % lighter than Sponberg (4 cells), NOT the −33 %
+the idealised box claimed.** Triggered by the user rejecting the CAD ("looks nothing like I described") and a
+terminology correction: the hollow airfoil-conforming members are **cells** (LE one a **D-cell**),
+the assembly a **multi-cell torsion box** — *not* "box spars" (rectangular) or "tube spars"
+(round). Renamed the API (`BoxSparLayout→CellLayout`, `box_spar_sections→cell_sections`, module
+`box_spars.py→cells.py`, `n_spars→n_cells`, …) + glossary; built a real conformal CAD
+(`examples/62`, ParaView render `paraview/torsion_box.py` — assembly/exploded/cutaway/full-mast),
+retiring the matplotlib-slab examples 60/61.
+
+**The re-size (the substance).** New `structural/amazon_conformal.py` sizes the section from the
+**actual** `cells.cell_sections` geometry, not an idealised box: thin-wall integrals
+``A=∮t ds``, ``I=∮t y² ds`` over each cell polyline, classifying every perimeter edge as a **cap**
+(on the OML-inset ellipse) or a **web** (interior). The per-edge line second moment
+``ds·(y0²+y0·y1+y1²)/3`` is **exact** — it reduces to ``y_mid²`` for a cap but recovers each
+vertical web's own ``h³/12`` self-bending (apples-to-apples with `amazon_myway`'s `I_web`; an
+earlier midpoint rule dropped it — physics-review catch). Because each cap's ``I_cap = t_cap·J_cap`` is
+**linear** in the cap wall, the strength + orthotropic cap-panel-buckling solve is the *same exact
+cubic-in-t* as `amazon_myway` — but on conformal geometry. Crucially the conformal model has **no
+``box_frac`` DVs to game**: the cells fill the chord, so the optimiser cannot collapse to a
+narrow-deep strut. **Why X4+ was wrong:** that −33 % "narrow-deep box (0.40c)" (a) **excluded the
+LE/TE fairing mass entirely** (the 60 % of the section outside the box was un-massed void) and (b)
+assumed an **unbacked FW shell** over that void — which would itself panel-buckle. The conformal
+model fixes both (every part massed; the shell is backed by cells everywhere) and is therefore a
+heavier — but real — number than the un-buildable artifact (while still beating Sponberg).
+
+**Result (optimised, DE over blend / web / shell walls / shell-helix / cap-f0; OML frozen, cells
+fill the chord):** **n=4 → 588 kg/mast (1176 both, −8.9 % vs Sponberg's 646); n=3 605 (−6.3 %); n=5
+591 (−8.4 %)** — a **−6 to −9 % band, n=4 best**. All buckling-governed at **λ = 1.50**, feasible
+(cap + shell util ≤ 1). The optimiser drove **every wall to its manufacturing floor** (blend
+10 mm, web 3 mm, shell 2 mm, helix 5°) and the cap layup to **55 % 0°** — a buckling-governed panel
+*wants* more ±45 to raise the transverse stiffness ``D22`` in ``K = √(D11·D22)+D12+2D66``. The DE
+terminates at a **bound corner** (`success=False`, all 5 DVs pinned to floors — now logged), i.e.
+the mass is set by the manufacturing minimums + buckling-sized caps, **not an interior trade**. Tip
+2.30 m at RM_max (floppier than Sponberg's 2.19 m, as his concentrate-and-fair section is stiffer
+per kg).
+
+**Eigen closure (Article III).** The governing cap panel (z=19.7 m, b=95 mm, t_cap=2.4 mm) re-uses
+the audited `amazon_eigen` path: **exact analytical orthotropic SS-plate λ = 1.500** (== the
+sizer's closed form, confirming it is the exact eigenvalue) and a **converged-mesh shell-FEA eigen
+λ = 1.746 (ny 8→24, +16 % overstiff)** — the same unconservative-linear-w-Kσ behaviour X4 found.
+Feasibility judged on the conservative exact floor (≥1.5); FEA adds margin. **Feasible.**
+
+**CAD == sizer.** `examples/62` now loads `exports/conformal_best.json` and builds on the SIZED
+cell-count (4), blend, walls and **cap schedule t_cap(z)** (6→2 mm). Residual honesty: the CAD
+hollows each cell with a single (cap) wall via `offset`, so its webs come out thicker than the
+sizer's separate `t_web` → CAD wing ≈ 517 kg vs the sizer's ≈ 477 kg (+~10 %); the **cap schedule
+matches exactly**, the discrepancy is the uniform-offset construction, not a design mismatch.
+
+**This supersedes the X4 (−8.8/−27.6 %) and X4+ (−18.7/−32.8 %) "beats Sponberg" headlines** — those
+were idealised-box artifacts. **Honest standing result: the buildable conformal multi-cell torsion
+box on the Amazon OML is ~9 % lighter than Sponberg (n=4; −6 to −9 % across 3–5 cells),
+eigen-feasible — a real but modest margin.** To genuinely *beat* a
+concentrate-and-fair box on a thick (t/c 0.40) lens you lean on *his* philosophy (structure at
+max depth + light fairing); filling the section with structural cells wins, but the thick lens
+holds that margin to a modest ~9 %. (optimise wall **310 s** measured, serial; eigen **2 s**;
+`just py runs/conformal_optimize.py` then `runs/conformal_eigen.py`; 4 tests + the geometry/API
+suite green.) Negative-result rigor per Article VII; physics-reviewed.
+
 ## Decisions log
 
 | Decision | Choice |
