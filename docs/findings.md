@@ -2235,7 +2235,7 @@ Feasibility judged on the conservative exact floor (≥1.5); FEA adds margin. **
 **CAD == sizer.** `examples/62` now loads `exports/conformal_best.json` and builds on the SIZED
 cell-count (5), 6 mm fillet, walls and **cap schedule t_cap(z)** (5→2 mm). Residual honesty: the CAD
 hollows each cell with a single (cap) wall via `offset`, so its webs come out thicker than the
-sizer's separate `t_web` → CAD wing ≈ 504 kg vs the sizer's ≈ 466 kg (+~10 %); the **cap schedule
+sizer's separate `t_web` → CAD wing ≈ 510 kg vs the sizer's ≈ 466 kg (+~10 %); the **cap schedule
 matches exactly**, the discrepancy is the uniform-offset construction, not a design mismatch.
 
 **Longerons = the true fillet-gap channels (user-driven correctness fix).** `cells.cell_sections`
