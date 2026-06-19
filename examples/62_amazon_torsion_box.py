@@ -108,6 +108,19 @@ def _loft(faces):
     return part.part
 
 
+def _loft_channel(polys, zs):
+    """Loft a thin channel sliver. OCC chokes on thin slivers at high point counts, and the smaller
+    the fillet the fewer points it tolerates — so try decreasing counts. Returns None if none work."""
+    for npts in (16, 12, 10, 8):
+        try:
+            faces = [Plane(origin=(0, 0, float(z))) * _face(resample_closed_polyline(np.asarray(p, float), npts))
+                     for z, p in zip(zs, polys)]
+            return _loft(faces)
+        except Exception:
+            continue
+    return None
+
+
 def _centered_ellipse(chord: float, thick: float, n: int = 140) -> np.ndarray:
     """Project-ordered ellipse (upper-TE→LE→lower-TE) of given chord×thick, centred at origin."""
     e = ellipse_coords(n // 2)
@@ -160,18 +173,18 @@ def main() -> None:
 
     # --- UD longerons: the TRUE inter-cell channel gaps (from cells.cell_sections), the void the
     # blend fillets leave between two cells and the shell, lofted top + bottom of each web ---------
-    longerons = []
+    longerons, n_skip = [], 0
     for wi in range(N_CELLS - 1):
         for attr in ("top_poly", "bottom_poly"):
             polys = [getattr(s.channels[wi], attr) for s in secs]
-            if any(len(p) < 3 for p in polys):
-                continue                                 # degenerate at some station — skip
-            # 20 pts: enough for the curved-triangle gap; more collapses OCC's thin-sliver loft
-            faces = [Plane(origin=(0, 0, float(z))) * _face(resample_closed_polyline(np.asarray(p, float), 20))
-                     for z, p in zip(zs, polys)]
-            longerons.append(_loft(faces))
+            lg = None if any(len(p) < 3 for p in polys) else _loft_channel(polys, zs)
+            if lg is None:
+                n_skip += 1
+            else:
+                longerons.append(lg)
     print(f"  longerons: valid {all(s.is_valid for s in longerons)}, "
-          f"{sum(s.volume for s in longerons) * RHO:6.0f} kg  ({len(longerons)} corner channels)")
+          f"{sum(s.volume for s in longerons) * RHO:6.0f} kg  ({len(longerons)} corner channels"
+          f"{f', {n_skip} too thin to loft' if n_skip else ''})")
 
     # --- FW outer shell (OML → inset envelope) -----------------------------------------------
     oml = [spec.section_oml(float(z), n_pts=2 * (N_PTS // 2)) for z in zs]

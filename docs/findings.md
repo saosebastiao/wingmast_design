@@ -2186,7 +2186,7 @@ everywhere, with off-axis only where buckling/manufacturability demand it. **Eig
 ### Phase X5 — as-built conformal re-size + terminology fix (2026-06-18, `R-AMZ-7`, user-driven) — honest reversal
 
 **Building the section the way it is actually made — conformal cells that fill the chord, caps on
-the ellipse — the project method is honestly ~9 % lighter than Sponberg (4 cells), NOT the −33 %
+the ellipse — the project method is honestly ~11 % lighter than Sponberg (4–5 cells), NOT the −33 %
 the idealised box claimed.** Triggered by the user rejecting the CAD ("looks nothing like I described") and a
 terminology correction: the hollow airfoil-conforming members are **cells** (LE one a **D-cell**),
 the assembly a **multi-cell torsion box** — *not* "box spars" (rectangular) or "tube spars"
@@ -2211,43 +2211,48 @@ assumed an **unbacked FW shell** over that void — which would itself panel-buc
 model fixes both (every part massed; the shell is backed by cells everywhere) and is therefore a
 heavier — but real — number than the un-buildable artifact (while still beating Sponberg).
 
-**Result (optimised, DE over blend / web / shell walls / shell-helix / cap-f0; OML frozen, cells
-fill the chord):** **n=4 → 588 kg/mast (1176 both, −8.9 % vs Sponberg's 646); n=3 605 (−6.3 %); n=5
-591 (−8.4 %)** — a **−6 to −9 % band, n=4 best**. All buckling-governed at **λ = 1.50**, feasible
-(cap + shell util ≤ 1). The optimiser drove **every wall to its manufacturing floor** (blend
-10 mm, web 3 mm, shell 2 mm, helix 5°) and the cap layup to **55 % 0°** — a buckling-governed panel
-*wants* more ±45 to raise the transverse stiffness ``D22`` in ``K = √(D11·D22)+D12+2D66``. The DE
-terminates at a **bound corner** (`success=False`, all 5 DVs pinned to floors — now logged), i.e.
-the mass is set by the manufacturing minimums + buckling-sized caps, **not an interior trade**. Tip
-2.30 m at RM_max (floppier than Sponberg's 2.19 m, as his concentrate-and-fair section is stiffer
-per kg).
+**Result (optimised, DE over `min_radius`/blend + web/shell walls + shell-helix + cap-f0; OML
+frozen, cells fill the chord):** **n=5 → 577 kg/mast (1154 both, −10.6 % vs Sponberg's 646); n=4 576
+(−10.7 %); n=3 598 (−7.3 %)** — **n=4 and n=5 tie at ≈ 576 kg (≈ −11 %)**, n=3 behind. All
+buckling-governed at **λ = 1.50**, feasible (cap + shell util ≤ 1). The optimiser drove **every DV
+to its manufacturing floor** — **`min_radius` → 6 mm** (the wound inside-corner minimum), web 3 mm,
+shell 2 mm, helix 5°, cap **55 % 0°** (a buckling-governed panel *wants* more ±45 to raise the
+transverse stiffness ``D22`` in ``K = √(D11·D22)+D12+2D66``). The DE terminates at a **bound corner**
+(`success=False`, all 5 DVs pinned to floors — logged), i.e. the mass is set by the manufacturing
+minimums + buckling-sized caps, **not an interior trade**. **On `min_radius` specifically:** with
+the longeron now sized to the *true* fillet-gap area (below), a bigger corner only adds corner-fill
+UD that does **not** help the governing cap-panel buckling (thickening the cap raises σ_cr ∝ t²
+*and* EI, a longeron only lowers stress), so the design wants the **smallest** manufacturable
+fillet — `min_radius` is genuinely optimised, to its floor. Tip 2.46 m at RM_max (floppier than
+Sponberg's 2.19 m, as his concentrate-and-fair section is stiffer per kg).
 
-**Eigen closure (Article III).** The governing cap panel (z=19.7 m, b=95 mm, t_cap=2.4 mm) re-uses
+**Eigen closure (Article III).** The governing cap panel (z=18.7 m, b=83 mm, t_cap=2.3 mm) re-uses
 the audited `amazon_eigen` path: **exact analytical orthotropic SS-plate λ = 1.500** (== the
 sizer's closed form, confirming it is the exact eigenvalue) and a **converged-mesh shell-FEA eigen
 λ = 1.746 (ny 8→24, +16 % overstiff)** — the same unconservative-linear-w-Kσ behaviour X4 found.
 Feasibility judged on the conservative exact floor (≥1.5); FEA adds margin. **Feasible.**
 
 **CAD == sizer.** `examples/62` now loads `exports/conformal_best.json` and builds on the SIZED
-cell-count (4), blend, walls and **cap schedule t_cap(z)** (6→2 mm). Residual honesty: the CAD
+cell-count (5), 6 mm fillet, walls and **cap schedule t_cap(z)** (5→2 mm). Residual honesty: the CAD
 hollows each cell with a single (cap) wall via `offset`, so its webs come out thicker than the
-sizer's separate `t_web` → CAD wing ≈ 528 kg vs the sizer's ≈ 477 kg (+~10 %); the **cap schedule
+sizer's separate `t_web` → CAD wing ≈ 504 kg vs the sizer's ≈ 466 kg (+~10 %); the **cap schedule
 matches exactly**, the discrepancy is the uniform-offset construction, not a design mismatch.
 
 **Longerons = the true fillet-gap channels (user-driven correctness fix).** `cells.cell_sections`
 now returns the **actual** longeron-channel polygons (`LongeronChannel.top_poly`/`bottom_poly`): the
-curved-triangle voids the `blend_radius` cell-corner fillets open between two adjacent cells and the
+curved-triangle voids the `min_radius` cell-corner fillets open between two adjacent cells and the
 shell, top + bottom of each shared web (LE/TE cells have 2 such corners, interior cells 4). `examples/62`
-lofts these directly (≈12 kg UD), replacing the free-standing wedge approximation — the longeron
-geometry is now derived from the cells' own rounding, single-source-of-truth (test: `test_cells.py`).
+lofts these directly (≈6 kg UD at the 6 mm optimum), and the **sizer** scores them by their exact
+polygon area + ∫y²dA (`_poly_area_Ix`) — so `min_radius` is a *faithful* structural variable,
+single-source-of-truth (tests: `test_cells.py`, `test_amazon_conformal.py`).
 
 **This supersedes the X4 (−8.8/−27.6 %) and X4+ (−18.7/−32.8 %) "beats Sponberg" headlines** — those
 were idealised-box artifacts. **Honest standing result: the buildable conformal multi-cell torsion
-box on the Amazon OML is ~9 % lighter than Sponberg (n=4; −6 to −9 % across 3–5 cells),
-eigen-feasible — a real but modest margin.** To genuinely *beat* a
+box on the Amazon OML is ~11 % lighter than Sponberg (n=4/n=5 ≈ 576 kg; −7 to −11 % across 3–5
+cells), eigen-feasible — a real, modest margin.** To genuinely *beat* a
 concentrate-and-fair box on a thick (t/c 0.40) lens you lean on *his* philosophy (structure at
 max depth + light fairing); filling the section with structural cells wins, but the thick lens
-holds that margin to a modest ~9 %. (optimise wall **310 s** measured, serial; eigen **2 s**;
+holds that margin to a modest ~11 %. (optimise wall **636 s** measured, serial; eigen **2 s**;
 `just py runs/conformal_optimize.py` then `runs/conformal_eigen.py`; 4 tests + the geometry/API
 suite green.) Negative-result rigor per Article VII; physics-reviewed.
 
