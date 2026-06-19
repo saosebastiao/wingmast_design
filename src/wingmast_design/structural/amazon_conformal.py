@@ -25,7 +25,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from ..geometry.amazon_mast import AmazonMastSpec, ellipse_coords
-from ..geometry.cells import CellLayout, cell_sections, longeron_void_area
+from ..geometry.cells import CellLayout, cell_sections
 from ..materials.unidir import T800_EPOXY, UDPly, laminate_stiffness
 from .amazon_myway import _shell_integrals, balanced_helical
 from .amazon_sizing import AmazonSizingParams, design_moment_at_z, round_props, size_wall_at_z
@@ -100,7 +100,20 @@ class _Geo:
     perim: float
     I_shell_unit: float   # ∮_OML y² ds  (I_shell = t_shell · I_shell_unit)
     A_long: float
-    I_long_unit: float    # Σ_webs 2·a_long·y_web²  (longerons lumped at the corner channels)
+    I_long_unit: float    # Σ_channels ∫y²dA over the TRUE fillet-gap polygons (the longeron void)
+
+
+def _poly_area_Ix(poly: np.ndarray) -> tuple[float, float]:
+    """(area, second moment about y=0) of a simple polygon — exact (shoelace + the matching
+    ``I_x = Σ cross·(y0²+y0·y1+y1²)/12`` line integral)."""
+    if len(poly) < 3:
+        return 0.0, 0.0
+    x, y = poly[:, 0], poly[:, 1]
+    x1, y1 = np.roll(x, -1), np.roll(y, -1)
+    cross = x * y1 - x1 * y
+    area = 0.5 * float(np.sum(cross))
+    ix = float(np.sum(cross * (y ** 2 + y * y1 + y1 ** 2))) / 12.0
+    return abs(area), abs(ix)
 
 
 def _section_geometry(z: float, spec: AmazonMastSpec, p: ConformalParams) -> _Geo:
@@ -132,12 +145,15 @@ def _section_geometry(z: float, spec: AmazonMastSpec, p: ConformalParams) -> _Ge
 
     oml = spec.section_oml(z)
     perim, I_shell_unit = _shell_integrals(oml)
-    a_long = longeron_void_area(p.blend_radius)
-    I_long_unit = 0.0
-    for xw in sec.webs:
-        y_w = b * np.sqrt(max(0.0, 1.0 - (float(xw) / a) ** 2))
-        I_long_unit += 2.0 * a_long * y_w ** 2                 # top + bottom corner longeron
-    A_long = 2.0 * (p.n_cells - 1) * a_long
+    # longerons fill the TRUE fillet-gap channels (the blend_radius lever): exact area + ∫y²dA over
+    # each top/bottom channel polygon — so min_radius is a faithful structural variable, not an
+    # analytic void approximation, and consistent with the CAD (examples/62).
+    A_long = I_long_unit = 0.0
+    for ch in sec.channels:
+        for cp in (ch.top_poly, ch.bottom_poly):
+            ar, ix = _poly_area_Ix(np.asarray(cp, float))
+            A_long += ar
+            I_long_unit += ix
     return _Geo(a=a, b=b, chord=chord, thick=thick, J_cap=J_cap, S_cap=S_cap, J_web=J_web,
                 S_web=S_web, y_capmax=y_capmax, b_panel=b_panel, perim=perim,
                 I_shell_unit=I_shell_unit, A_long=A_long, I_long_unit=I_long_unit)
@@ -302,7 +318,9 @@ def conformal_tip_deflection(spec: AmazonMastSpec, p: ConformalParams) -> tuple[
 # Optimiser over the REAL remaining freedom (the OML is frozen and the cells fill the chord, so
 # there is no box-fraction to game): blend radius, FW web + shell walls, shell helix, cap layup.
 # ---------------------------------------------------------------------------------------------
-_OPT_BOUNDS = [(0.010, 0.040), (0.003, 0.008), (0.002, 0.010), (5.0, 15.0), (0.55, 0.85)]
+# DV = [blend_radius (min corner radius), t_web, t_shell, shell_helix_deg, cap_f0]. blend_radius
+# floor = a filament-wound inside-corner minimum (~6 mm: tighter bridges the tow → voids).
+_OPT_BOUNDS = [(0.006, 0.040), (0.003, 0.008), (0.002, 0.010), (5.0, 15.0), (0.55, 0.85)]
 
 
 def _opt_params(x, n_cells: int, base: ConformalParams) -> ConformalParams:
