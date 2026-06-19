@@ -145,10 +145,17 @@ def render_assembly(view, parts, args):
 
 def render_exploded(view, parts, args):
     fresh_view(view)
-    for name, rgb, op in _detail_parts(parts):
+    dp = _detail_parts(parts)
+    cells = [p for p in dp if p[0].startswith("cell_")]
+    ci = 0
+    for name, rgb, op in dp:
         src = clip_top(OpenDataFile(str(PDIR / f"{name}.stl")))
         tr = Transform(Input=src)
-        tr.Transform.Translate = list(explode_offset(name))
+        if name.startswith("cell_"):                  # spread all cells evenly along the chord
+            tr.Transform.Translate = [(ci - (len(cells) - 1) / 2.0) * DX, 0.0, 0.0]
+            ci += 1
+        else:
+            tr.Transform.Translate = list(explode_offset(name))
         d = Show(tr, view)
         style(d, rgb, 0.4 if name == "fw_shell" else op)
     cam_threequarter(view, direction=(2.4, 1.3, 0.8))

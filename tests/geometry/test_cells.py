@@ -90,6 +90,32 @@ def test_internal_cells_have_blend_curve_corners():
     assert corner_gap(0.02) > corner_gap(0.005) > 0.0
 
 
+def test_channel_polys_are_the_fillet_gaps():
+    """R-GEO-5: the longeron channel is the TRUE gap the blend fillets open between two adjacent
+    cells and the shell — a real top + bottom polygon at each internal web, under the OML, growing
+    with the blend radius. (Filled with UD it becomes the longeron.)"""
+    from wingmast_design.geometry.fit import _is_simple_polygon
+
+    def poly_area(p):
+        x, y = p[:, 0], p[:, 1]
+        return 0.5 * abs(np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)))
+
+    for n in (3, 4, 5):
+        sec = _section(n_cells=n, blend_radius=0.03)
+        assert len(sec.channels) == n - 1
+        for ch in sec.channels:
+            assert len(ch.top_poly) >= 3 and len(ch.bottom_poly) >= 3
+            # top gap above the chord axis, bottom gap below — both centred on the shared web
+            assert ch.top_poly[:, 1].max() > 0.0 and ch.bottom_poly[:, 1].min() < 0.0
+            assert abs(float(np.mean(ch.top_poly[:, 0])) - ch.x) < 0.06
+            assert _is_simple_polygon(ch.top_poly) and _is_simple_polygon(ch.bottom_poly)
+
+    # a larger blend radius opens a larger channel
+    small = _section(n_cells=3, blend_radius=0.02).channels[0]
+    big = _section(n_cells=3, blend_radius=0.05).channels[0]
+    assert poly_area(big.top_poly) > poly_area(small.top_poly)
+
+
 def _is_simple(poly: np.ndarray) -> bool:
     from wingmast_design.geometry.fit import _is_simple_polygon
 

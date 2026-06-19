@@ -62,7 +62,12 @@ class CellLayout:
 class LongeronChannel:
     x: float                 # chordwise position of the shared web
     void_area: float         # from blend_radius (the coupling)
-    polyline: np.ndarray     # representative channel cross-section
+    polyline: np.ndarray     # legacy schematic equal-area marker (kept for back-compat)
+    # the TRUE channel cross-sections: the gaps the two neighbouring cells' blend fillets leave
+    # between them and the shell-following surface, at the top and bottom of the shared web. Filled
+    # with UD → the longerons. Empty if the corner is too tight to fillet at this station.
+    top_poly: np.ndarray = field(default_factory=lambda: np.empty((0, 2)))
+    bottom_poly: np.ndarray = field(default_factory=lambda: np.empty((0, 2)))
 
 
 @dataclass(frozen=True, eq=False)
@@ -156,6 +161,33 @@ def _cell_outline(upper, lower, x_l, x_r, r_blend, is_le, is_te, n_chord=24):
     return np.asarray(out, float)
 
 
+def _channel_polygon(surface: np.ndarray, xw: float, r: float, half_span: float,
+                     *, top: bool, n_arc: int = 8) -> np.ndarray:
+    """The TRUE longeron-channel cross-section at the shared web ``xw``: the curved-triangle gap
+    bounded ABOVE by the shell-following ``surface`` (upper for the top channel, lower for the
+    bottom) and BELOW by the two neighbouring cells' blend fillets meeting at the web. This is the
+    void the ``r``-radius corner rounding opens between the two cells and the shell — filled with
+    UD it becomes the longeron. Returns ``(0,2)`` if the corner is too tight to fillet.
+    """
+    yc = float(_y_on(surface, np.array([float(xw)]))[0])
+    C = np.array([float(xw), yc])
+    dx = min(3.0 * r, 0.9 * half_span)                        # cap-edge reach each side of the web
+    dy = min(3.0 * r, 0.6 * abs(yc) + 1e-12)                  # web reach (don't cross the chord axis)
+    if dx <= 1e-9 or dy <= 1e-9:
+        return np.empty((0, 2))
+    capL = np.array([xw - dx, float(_y_on(surface, np.array([xw - dx]))[0])])
+    capR = np.array([xw + dx, float(_y_on(surface, np.array([xw + dx]))[0])])
+    web = np.array([float(xw), yc - dy if top else yc + dy])
+    left = np.asarray(_fillet_corner(capL, C, web, r, n_arc=n_arc), float)    # capL-tangent → web
+    right = np.asarray(_fillet_corner(capR, C, web, r, n_arc=n_arc), float)   # capR-tangent → web
+    if left.shape[0] < 2 or right.shape[0] < 2:
+        return np.empty((0, 2))                              # degenerate (corner too tight)
+    xs = np.linspace(float(left[0, 0]), float(right[0, 0]), 14)
+    env_arc = np.column_stack([xs, _y_on(surface, xs)])      # shell-following top edge, capL→capR
+    # CCW: env arc (capL→capR) → right fillet (capR→web) → left fillet (web→capL)
+    return np.vstack([env_arc, right[1:], left[::-1][1:-1]])
+
+
 def cell_sections(oml: np.ndarray, layout: CellLayout) -> CellSection:
     """Partition an OML section into ≥3 filleted cells + the inter-cell longeron
     channels (void from the blend radius) + the outer-shell (= OML) polyline."""
@@ -174,17 +206,23 @@ def cell_sections(oml: np.ndarray, layout: CellLayout) -> CellSection:
 
     channels = []
     void = longeron_void_area(layout.blend_radius)
-    half = 0.5 * np.sqrt(void)                       # equal-area square half-side
-    for xw in webs:
-        # `polyline` is a SCHEMATIC equal-area marker centred at the web (area == void_area);
-        # the physical void is split between the top & bottom web↔OML corner junctions. The
-        # load-bearing quantity is `void_area` (the blend-radius coupling), not this outline.
+    half = 0.5 * np.sqrt(void)                       # equal-area square half-side (legacy marker)
+    r = layout.blend_radius
+    for i, xw in enumerate(webs):
+        # legacy schematic marker (area == void_area), kept for back-compat — the load-bearing
+        # quantity for the sizer is `void_area` (the blend-radius coupling).
         y_mid = 0.5 * float(_y_on(upper, np.array([xw]))[0] + _y_on(lower, np.array([xw]))[0])
         poly = np.array([
             [xw - half, y_mid - half], [xw + half, y_mid - half],
             [xw + half, y_mid + half], [xw - half, y_mid + half],
         ])
-        channels.append(LongeronChannel(x=float(xw), void_area=void, polyline=poly))
+        # TRUE channel polygons: the gaps the fillets leave between the two adjacent cells and the
+        # shell, at top + bottom of this web. half-span = distance to the nearer neighbour (web/edge).
+        half_span = 0.5 * min(float(xw) - float(bounds[i]), float(bounds[i + 2]) - float(xw))
+        top_poly = _channel_polygon(upper, float(xw), r, half_span, top=True)
+        bot_poly = _channel_polygon(lower, float(xw), r, half_span, top=False)
+        channels.append(LongeronChannel(x=float(xw), void_area=void, polyline=poly,
+                                        top_poly=top_poly, bottom_poly=bot_poly))
 
     return CellSection(cells=cells, channels=channels, outer_shell=np.asarray(oml, float),
                        webs=np.asarray(webs, float))
