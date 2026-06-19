@@ -238,10 +238,18 @@ def main() -> None:
     manifest += [("fw_shell", SHELL_RGB, 0.3), ("bearing_stock", STOCK_RGB, 1.0)]
 
     asm = Compound(children=[*cells, *longerons, shell, stock])
-    export_step(asm, str(out / "amazon_torsion_box.step"))
+    # STEP is written in MILLIMETRES (the OCC/STEP unit) so it imports at true size in Fusion 360 /
+    # SolidWorks / etc. — our model is in metres → scale ×1000. Scale each labelled body and rebuild
+    # the Compound (scaling the whole Compound at once drops the body names).
+    mm_parts = []
+    for p in [*cells, *longerons, shell, stock]:
+        q = p.scale(1000.0)
+        q.label, q.color = p.label, p.color
+        mm_parts.append(q)
+    export_step(Compound(children=mm_parts), str(out / "amazon_torsion_box.step"))
     _write_manifest(pdir, manifest)
     print(f"  wrote {len(manifest)} part STLs → exports/torsion_box/ + amazon_torsion_box.step "
-          f"({len(asm.solids())} solids)")
+          f"(mm; {len(asm.solids())} named solid bodies)")
 
     _render_section(spec, layout, out)
     print(f"DONE in {time.perf_counter() - t0:.1f} s")
