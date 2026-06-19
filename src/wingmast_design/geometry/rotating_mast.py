@@ -4,7 +4,7 @@
 the ~3–4 m wingsail (mast + deployed soft sail).** The wingsail is the *aerodynamic* surface
 that sets the operational loads (Phase A); the soft sail wraps around this small mast and
 extends aft. So the chords here are mast-scale (slender: 22 m span / ~1 m chord, AR ~25); a
-section ~0.1–0.18 m thick that the box spars + a ~0.08–0.16 m stock fit inside, sized to carry
+section ~0.1–0.18 m thick that the cells + a ~0.08–0.16 m stock fit inside, sized to carry
 OP-2 (~160 kN·m). (Earlier this geometry was wrongly built at the 4 m wingsail chord — corrected
 2026-06-17 per the user; the wingsail chord is now an aero-only parameter.)
 

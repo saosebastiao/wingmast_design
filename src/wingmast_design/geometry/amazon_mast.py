@@ -168,8 +168,8 @@ class AmazonMastSpec:
     def total_length(self) -> float:
         return self.sail_track_length + self.below_root_length
 
-    # --- duck-type bridge so the audited box-spar partition + check_fit work unchanged ----
-    # (`box_spars.mast_box_spar_sections` / `fit.check_fit` consume `span`, `_contour(frac)`,
+    # --- duck-type bridge so the audited cell partition + check_fit work unchanged ----
+    # (`cells.mast_cell_sections` / `fit.check_fit` consume `span`, `_contour(frac)`,
     #  `chord_at_z`, `rotation_center_xc`). The OML stays frozen — no geometry DV is exposed.
     @property
     def span(self) -> float:

@@ -33,9 +33,13 @@ lookup so terms aren't re-derived.
 | **Transition zone** | The spanwise band where the section morphs circular (stock) → airfoil (wing), `z ∈ [−transition_length, 0]`; smoothstep-faired. |
 | **Wing root / tip** | Bottom (`z = 0`) / top (`z = span`) of the exposed airfoil wing. |
 | **Stock / OML / outer shell** | Stock = the circular rotating base; **OML** = outer mold line (the faired outer surface); **outer shell** = the filament-wound skin to the OML. |
-| **Box spar** | A convex hollow filament-wound CFRP tube; ≥3 run chordwise (LE-curve + center(s) + TE-curve) and are co-bonded into the airfoil. |
-| **Longeron** | A unidirectional (0°-ish) load-carrying member laid into the **longeron channel** — the void left between adjacent box spars by their rounded corners. |
-| **Blend curve / blend radius** | The rounded corner of a box spar; its **radius** sets the inter-spar longeron-channel void size (the blend-radius → longeron coupling). |
+| **Cell (conformal cell)** | A hollow, filament-wound CFRP **closed-section spar whose caps follow the airfoil contour** (curved — *not* a rectangular box, *not* a round tube). ≥3 run chordwise (LE + centre(s) + TE) and are co-bonded side-by-side to fill the section. **This is the correct term**; "box spar" is a retained misnomer (these are conformal, not boxes). The code API still uses the historical `box_spar*` names (`BoxSparLayout`, `box_spar_sections`). |
+| **D-cell** | The **leading-edge** conformal cell: the curved LE skin closed off by a shear web → a "D" in section. The **TE cell** is its mirror; the **interior cell(s)** have curved (airfoil-conforming) top + bottom caps bounded by two webs. |
+| **Multi-cell (N-cell) torsion box** | The co-bonded assembly = N conformal **cells** filling the airfoil + UD **longerons** in the corner channels + the FW **outer shell** that fairs it to the OML. "Box" = a *closed torsion-carrying section*, not a rectangle. The project's mast build (vs Sponberg's single box spar + glass fairings). |
+| **Conformal** | Of a closed section: shaped to **follow its container's contour** (the OML). Contrast: round → **tube spar**; rectangular → **box spar** (neither is what we build). |
+| **Box spar / tube spar** | **(deprecated for our build)** Box spar = rectangular hollow section; tube spar = round hollow section. Our members are neither — see **cell** / **multi-cell torsion box**. Retained only to describe *Sponberg's* single-box mast and in legacy code names. |
+| **Longeron** | A unidirectional (0°-ish) load-carrying member laid into the **longeron channel** — the void left between **adjacent cells** by their rounded corners (top + bottom of each shared web). |
+| **Blend curve / blend radius** | The rounded corner of a **cell**; its **radius** sets the inter-cell longeron-channel void size (the blend-radius → longeron coupling). |
 | **Entasis** | A slight convex spanwise bow of the wing loft-axis (classical column entasis); composes with taper. |
 | **Pivot / rotation centre** | The rotation axis the mast turns about (on the chord at `rotation_center_xc`, ~0.25c). Distinct from the aerodynamic **CoM** (below). |
 | **Rotational-center foil offset** | The rotation-axis position on the chord — a design parameter, distinct from the aerodynamic centre-of-moment. |

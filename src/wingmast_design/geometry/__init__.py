@@ -11,13 +11,13 @@ from .amazon_mast import (
     build_amazon_mast_solid,
     ellipse_coords,
 )
-from .box_spars import (
-    BoxSparLayout,
+from .cells import (
+    CellLayout,
     LongeronChannel,
-    SparSection,
-    box_spar_sections,
+    CellSection,
+    cell_sections,
     longeron_void_area,
-    mast_box_spar_sections,
+    mast_cell_sections,
 )
 from .fit import FitResult, check_fit
 from .parameters import GEOMETRY_PARAMS, MastGeometryParameters, Param
@@ -45,11 +45,11 @@ __all__ = [
     "AMAZON_RM_NM",
     "AMAZON_FOS",
     "AMAZON_DESIGN_MOMENT_NM",
-    "BoxSparLayout",
+    "CellLayout",
     "LongeronChannel",
-    "SparSection",
-    "box_spar_sections",
-    "mast_box_spar_sections",
+    "CellSection",
+    "cell_sections",
+    "mast_cell_sections",
     "longeron_void_area",
     "FitResult",
     "check_fit",

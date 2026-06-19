@@ -1,13 +1,13 @@
 """Rebuild the Amazon OML with THIS project's manufacturing concept (Phase X3, `R-AMZ-4`).
 
 Same frozen 2.5:1 ellipse, sized to the same Amazon loads/criteria — but built the project way:
-**N filament-wound box spars** across the chord + **co-bonded UD channel longerons** in the
-inter-spar voids + a **filament-wound outer shell** (`docs/specs/04-amazon-baseline/spec.md`).
+**N filament-wound cells** across the chord + **co-bonded UD channel longerons** in the
+inter-cell voids + a **filament-wound outer shell** (`docs/specs/04-amazon-baseline/spec.md`).
 
 The structural thesis vs Sponberg's single box + glass fairings:
 
   * **closer webs ⇒ smaller cap panels** — the buckling-floor wall is ``0.03·(cell width)``, and
-    the cell width is ``box·chord / n_spars`` (vs his full box width). So the multi-spar wall drops
+    the cell width is ``box·chord / n_cells`` (vs his full box width). So the multi-spar wall drops
     OFF Amazon's buckling floor (13.5 mm) onto the much lower **strength** requirement — the
     material his section "wastes" on section-shape stability;
   * the **FW shell** is structural — it sits at the extreme fibre (±t/2, outboard of the box caps
@@ -16,7 +16,7 @@ The structural thesis vs Sponberg's single box + glass fairings:
   * the **UD longerons** add 0° bending material in the channels for free (the blend-radius void).
 
 X3 sizes this first-order (cap wall = max(strength-with-shell-help, 0.03·cell-panel); web/shell at
-manufacturing minima; longerons from the blend-radius void) for ``n_spars ∈ {3, 4}`` → mass vs the
+manufacturing minima; longerons from the blend-radius void) for ``n_cells ∈ {3, 4}`` → mass vs the
 X2 (his-construction) estimate. **X4 then OPTIMIZES** the wall/cap/shell/longeron distribution to
 minimise mass — X3 is the starting point, not the optimum.
 """
@@ -27,7 +27,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from ..geometry.amazon_mast import AmazonMastSpec
-from ..geometry.box_spars import BoxSparLayout, longeron_void_area
+from ..geometry.cells import CellLayout, longeron_void_area
 from ..materials.unidir import (
     T800_EPOXY,
     UDPly,
@@ -71,7 +71,7 @@ def balanced_helical(ply: UDPly, helix_deg: float) -> tuple[float, float, float]
 class MyWayParams:
     """Internal design knobs for the project-method build (sized in X3, optimised in X4)."""
 
-    n_spars: int = 3
+    n_cells: int = 3
     box_frac_chord: float = 0.60          # box region width / chord
     box_frac_thick: float = 0.70          # box height / thickness (bending depth)
     blend_radius: float = 0.020           # corner radius → longeron channel void
@@ -163,16 +163,16 @@ def myway_section(z: float, spec: AmazonMastSpec, p: MyWayParams,
     half_fit = (thick / 2.0) * np.sqrt(max(0.0, 1.0 - p.box_frac_chord ** 2)) - p.t_shell - p.blend_radius
     box_ft = min(p.box_frac_thick, max(0.30, 2.0 * half_fit / thick)) if thick > 0 else p.box_frac_thick
     h = box_ft * thick
-    cell_w = w_box / p.n_spars
+    cell_w = w_box / p.n_cells
 
     perim, I_shell_unit = _shell_integrals(oml)
     A_shell = perim * p.t_shell
     I_shell = I_shell_unit * p.t_shell
-    n_web = p.n_spars + 1
+    n_web = p.n_cells + 1
     A_web = n_web * h * p.t_web
     I_web = n_web * p.t_web * h ** 3 / 12.0
     a_long_each = longeron_void_area(p.blend_radius)          # UD longerons in the channels
-    n_long = 2 * (p.n_spars - 1)
+    n_long = 2 * (p.n_cells - 1)
     A_long = n_long * a_long_each
     I_long = n_long * a_long_each * (h / 2.0) ** 2
 
@@ -241,7 +241,7 @@ def myway_tip_deflection(spec: AmazonMastSpec, p: MyWayParams) -> tuple[float, f
 
 @dataclass(frozen=True)
 class MyWayMassResult:
-    n_spars: int
+    n_cells: int
     mass_per_mast_kg: float
     mass_both_masts_kg: float
     wing_kg: float
@@ -262,7 +262,7 @@ class MyWayMassResult:
 
 def estimate_myway_mass(spec: AmazonMastSpec, p: MyWayParams,
                         amazon_per_mast_kg: float | None = None) -> MyWayMassResult:
-    """Integrate the project-method section mass over the mast for ``p.n_spars`` spars."""
+    """Integrate the project-method section mass over the mast for ``p.n_cells`` spars."""
     z_wing = np.linspace(0.0, spec.sail_track_length, p.n_int)
     mods = p.props()
     dm, gov_count = [], {"strength": 0, "panel-buckling": 0, "buckle-floor": 0, "cap-min": 0}
@@ -295,7 +295,7 @@ def estimate_myway_mass(spec: AmazonMastSpec, p: MyWayParams,
     vs = (100.0 * (per_mast - amazon_per_mast_kg) / amazon_per_mast_kg
           if amazon_per_mast_kg else None)
     return MyWayMassResult(
-        n_spars=p.n_spars, mass_per_mast_kg=per_mast, mass_both_masts_kg=2.0 * per_mast,
+        n_cells=p.n_cells, mass_per_mast_kg=per_mast, mass_both_masts_kg=2.0 * per_mast,
         wing_kg=wing_kg, stock_kg=stock_kg, root_cap_mm=root_cap_mm,
         governing_fracs=gov_fracs, max_shell_util=shell_util, max_cap_util=cap_util,
         min_buckle_lambda=min_buckle_lambda, buckle_sf=p.buckle_sf, vs_amazon_pct=vs,
@@ -305,7 +305,7 @@ def estimate_myway_mass(spec: AmazonMastSpec, p: MyWayParams,
 def myway_fit(spec: AmazonMastSpec, p: MyWayParams):
     """Manufacturability verdict (`check_fit`) for the project-method build on the Amazon OML."""
     from ..geometry.fit import check_fit
-    layout = BoxSparLayout(n_spars=p.n_spars, blend_radius=p.blend_radius,
-                           spar_wall=p.t_web, shell_wall=p.t_shell)
+    layout = CellLayout(n_cells=p.n_cells, blend_radius=p.blend_radius,
+                           cell_wall=p.t_web, shell_wall=p.t_shell)
     z_stations = np.linspace(0.0, spec.sail_track_length, 9)
     return check_fit(spec, layout, z_stations=z_stations)

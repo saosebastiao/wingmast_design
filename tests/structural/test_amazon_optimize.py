@@ -19,7 +19,7 @@ def test_sizer_enforces_buckling_lambda():
     floor was insufficient; the orthotropic panel constraint is now enforced by the sizer."""
     spec = AmazonMastSpec()
     for n in (3, 4, 5):
-        r = estimate_myway_mass(spec, MyWayParams(n_spars=n))
+        r = estimate_myway_mass(spec, MyWayParams(n_cells=n))
         assert r.feasible
         assert r.min_buckle_lambda >= 1.5 - 1e-6
 
@@ -30,7 +30,7 @@ def test_mass_optimum_is_lighter_but_floppier_than_amazon():
     This is the honest tradeoff the stiffness-matched run (B) addresses."""
     spec = AmazonMastSpec()
     amz = estimate_amazon_mast_mass(spec)
-    opt = MyWayParams(n_spars=3, box_frac_thick=0.88, box_frac_chord=0.45,
+    opt = MyWayParams(n_cells=3, box_frac_thick=0.88, box_frac_chord=0.45,
                       t_shell=0.0025, t_web=0.003)
     r = estimate_myway_mass(spec, opt)
     d_opt, pct = myway_tip_deflection(spec, opt)
