@@ -1,15 +1,15 @@
-"""Box-spar + longeron-channel + outer-shell cross-section geometry (`R-GG-3`, parent
+"""Conformal-cell + longeron-channel + outer-shell cross-section geometry (`R-GG-3`, parent
 `R-GEO-5`).
 
-The prescribed build is **≥3 convex hollow box spars** placed side-by-side inside the
-airfoil, co-bonded; the **inter-spar longeron channels** are the voids their rounded
+The prescribed build is **≥3 convex hollow cells** placed side-by-side inside the
+airfoil, co-bonded; the **inter-cell longeron channels** are the voids their rounded
 (blend-curve) corners leave at the shared interfaces; a **filament-wound outer shell** fairs
 the assembly to the OML. This module produces that as a per-station **section set** (closed
 2-D polylines) — the "section-set + loft" strategy (`D-GG-…`): light, OCC-boolean-free, and
 directly meshable by Phase S. Lofting the sections spanwise into the assembly is Phase G.6.
 
 The key coupling (`R-GEO-5`): the longeron-channel cross-section is **computed from the blend
-radius** — rounding the box-spar corners with radius ``blend_radius`` leaves a void at each
+radius** — rounding the cell corners with radius ``blend_radius`` leaves a void at each
 web↔OML junction whose area grows as ``blend_radius²`` (`longeron_void_area`). That is the
 blend-radius → channel-void → longeron strength/mass lever Phase O will trade.
 
@@ -23,38 +23,38 @@ import numpy as np
 
 # A filleted 90° corner of radius r leaves, between the arc and the square corner, a void of
 # area r²(1 - π/4). A longeron channel has 2 such corners (top + bottom of the shared web),
-# and the channel is shared by the two adjacent spars → 2 sides ⇒ ~4 corner-voids.
+# and the channel is shared by the two adjacent cells → 2 sides ⇒ ~4 corner-voids.
 _CORNER_VOID = 1.0 - np.pi / 4.0
 _VOIDS_PER_CHANNEL = 4.0
 
 
 def longeron_void_area(blend_radius: float) -> float:
-    """Inter-spar longeron-channel void area implied by the blend-corner radius (the
+    """Inter-cell longeron-channel void area implied by the blend-corner radius (the
     `R-GEO-5` coupling): ``≈ 4·r²·(1 - π/4)`` — monotone increasing in ``blend_radius``."""
     r = float(blend_radius)
     return _VOIDS_PER_CHANNEL * _CORNER_VOID * r * r
 
 
 @dataclass(frozen=True)
-class BoxSparLayout:
-    """Chordwise box-spar layout. ``web_fracs`` are the internal web positions as fractions
-    of the chord (between LE and TE); ``None`` → even division into ``n_spars`` bands."""
+class CellLayout:
+    """Chordwise cell layout. ``web_fracs`` are the internal web positions as fractions
+    of the chord (between LE and TE); ``None`` → even division into ``n_cells`` bands."""
 
-    n_spars: int = 3
+    n_cells: int = 3
     web_fracs: tuple[float, ...] | None = None
     # Defaults sized for the bare-WINGMAST section (~0.5–1.0 m chord, ~0.1–0.18 m thick),
     # NOT the 4 m wingsail. The blend radius + walls are mm-scale for this small section.
     blend_radius: float = 0.015       # corner radius → longeron channel (m)
-    spar_wall: float = 0.004          # geometry placeholder (true value sized in Phase O)
+    cell_wall: float = 0.004          # geometry placeholder (true value sized in Phase O)
     shell_wall: float = 0.003         # geometry placeholder
 
     def web_positions(self, x_le: float, x_te: float) -> np.ndarray:
-        """Internal web x-positions (n_spars - 1 of them) across the chord."""
+        """Internal web x-positions (n_cells - 1 of them) across the chord."""
         if self.web_fracs is not None:
             fr = np.asarray(self.web_fracs, dtype=float)
-            assert len(fr) == self.n_spars - 1, "web_fracs must be n_spars-1 long"
+            assert len(fr) == self.n_cells - 1, "web_fracs must be n_cells-1 long"
         else:
-            fr = np.arange(1, self.n_spars) / self.n_spars
+            fr = np.arange(1, self.n_cells) / self.n_cells
         return x_le + fr * (x_te - x_le)
 
 
@@ -66,11 +66,11 @@ class LongeronChannel:
 
 
 @dataclass(frozen=True, eq=False)
-class SparSection:
-    """The box-spar / longeron / shell section set at one station."""
+class CellSection:
+    """The cell / longeron / shell section set at one station."""
 
-    cells: list[np.ndarray]              # ≥3 box-spar cell outlines (closed, filleted corners)
-    channels: list[LongeronChannel]      # inter-spar longeron channels
+    cells: list[np.ndarray]              # ≥3 cell outlines (closed, filleted corners)
+    channels: list[LongeronChannel]      # inter-cell longeron channels
     outer_shell: np.ndarray              # OML polyline the wound shell follows
     webs: np.ndarray = field(default_factory=lambda: np.empty(0))
 
@@ -124,7 +124,7 @@ def _fillet_corner(a: np.ndarray, c: np.ndarray, b: np.ndarray, r: float, n_arc:
 
 
 def _cell_outline(upper, lower, x_l, x_r, r_blend, is_le, is_te, n_chord=24):
-    """One box-spar cell: OML-upper cap (x_l→x_r) + right web + OML-lower cap + left web,
+    """One cell: OML-upper cap (x_l→x_r) + right web + OML-lower cap + left web,
     with the web↔OML corners filleted (radius ``r_blend``). LE/TE cells keep the nose/tail
     curve instead of a web on that side."""
     xs = np.linspace(x_l, x_r, n_chord)
@@ -156,20 +156,20 @@ def _cell_outline(upper, lower, x_l, x_r, r_blend, is_le, is_te, n_chord=24):
     return np.asarray(out, float)
 
 
-def box_spar_sections(oml: np.ndarray, layout: BoxSparLayout) -> SparSection:
-    """Partition an OML section into ≥3 filleted box-spar cells + the inter-spar longeron
+def cell_sections(oml: np.ndarray, layout: CellLayout) -> CellSection:
+    """Partition an OML section into ≥3 filleted cells + the inter-cell longeron
     channels (void from the blend radius) + the outer-shell (= OML) polyline."""
-    assert layout.n_spars >= 3, "R-GEO-5 requires ≥3 box spars"
+    assert layout.n_cells >= 3, "R-GEO-5 requires ≥3 cells"
     upper, lower = _split_upper_lower(oml)
     x_le, x_te = float(upper[0, 0]), float(upper[-1, 0])
     webs = layout.web_positions(x_le, x_te)
     bounds = np.concatenate([[x_le], webs, [x_te]])
 
     cells = []
-    for k in range(layout.n_spars):
+    for k in range(layout.n_cells):
         cells.append(_cell_outline(
             upper, lower, bounds[k], bounds[k + 1], layout.blend_radius,
-            is_le=(k == 0), is_te=(k == layout.n_spars - 1),
+            is_le=(k == 0), is_te=(k == layout.n_cells - 1),
         ))
 
     channels = []
@@ -186,15 +186,15 @@ def box_spar_sections(oml: np.ndarray, layout: BoxSparLayout) -> SparSection:
         ])
         channels.append(LongeronChannel(x=float(xw), void_area=void, polyline=poly))
 
-    return SparSection(cells=cells, channels=channels, outer_shell=np.asarray(oml, float),
+    return CellSection(cells=cells, channels=channels, outer_shell=np.asarray(oml, float),
                        webs=np.asarray(webs, float))
 
 
-def mast_box_spar_sections(spec, z: float, layout: BoxSparLayout) -> SparSection:
-    """Convenience: build the box-spar section set at wing height ``z`` of a
+def mast_cell_sections(spec, z: float, layout: CellLayout) -> CellSection:
+    """Convenience: build the cell section set at wing height ``z`` of a
     `RotatingMastSpec` (uses its blended CST OML at that station)."""
     frac = max(0.0, min(z / spec.span, 1.0))
     contour = spec._contour(frac)
     chord = spec.chord_at_z(z)
     oml = (contour - np.array([spec.rotation_center_xc, 0.0])) * chord
-    return box_spar_sections(oml, layout)
+    return cell_sections(oml, layout)

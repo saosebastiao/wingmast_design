@@ -1,19 +1,19 @@
 """Geometric-fit validator (`R-GG-4`, parent `R-CON-1`).
 
-Confirms that the box spars + longeron channels + outer shell **fit within the faired OML**
+Confirms that the cells + longeron channels + outer shell **fit within the faired OML**
 and that members **may touch but do not intersect**. Two layers:
 
-  * **member validity** (`R-CON-1` "must not intersect"): every box-spar cell polygon is
+  * **member validity** (`R-CON-1` "must not intersect"): every cell polygon is
     *simple* (non-self-intersecting) and contained within the OML upper/lower envelope, and
     the cells are chordwise-disjoint bands (touch at the shared webs, never overlap);
   * **clearance margin**: the local section must leave room for the corner fillets and the
     walls at every internal **web** (the well-defined, non-degenerate interfaces) —
     ``web_height/2 ≥ blend_radius``, ``band_half_width ≥ blend_radius``, and
-    ``web_height ≥ 2·(spar_wall + shell_wall)``.
+    ``web_height ≥ 2·(cell_wall + shell_wall)``.
 
 `feasible` requires **both** (valid members AND margin ≥ −tol). The signed `margin` (m) is the
 smallest clearance over all stations × webs. The validator *bites*: a self-intersecting/
-OML-violating cell, or an inflated ``blend_radius`` / ``spar_wall`` / ``shell_wall``, makes it
+OML-violating cell, or an inflated ``blend_radius`` / ``cell_wall`` / ``shell_wall``, makes it
 infeasible (`tests/geometry/test_fit.py`, and the G.6 smoke test).
 """
 from __future__ import annotations
@@ -22,7 +22,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .box_spars import BoxSparLayout, _split_upper_lower, _y_on, mast_box_spar_sections
+from .cells import CellLayout, _split_upper_lower, _y_on, mast_cell_sections
 
 
 @dataclass(frozen=True)
@@ -64,8 +64,8 @@ def _within_oml(cell: np.ndarray, upper: np.ndarray, lower: np.ndarray, tol: flo
     )
 
 
-def check_fit(spec, layout: BoxSparLayout, z_stations=None, clearance_tol: float = 1e-6) -> FitResult:
-    """Validate the box-spar / longeron / shell fit across spanwise stations."""
+def check_fit(spec, layout: CellLayout, z_stations=None, clearance_tol: float = 1e-6) -> FitResult:
+    """Validate the cell / longeron / shell fit across spanwise stations."""
     if z_stations is None:
         z_stations = np.linspace(0.0, spec.span, 9)
 
@@ -77,7 +77,7 @@ def check_fit(spec, layout: BoxSparLayout, z_stations=None, clearance_tol: float
     reason = "ok"
 
     for z in z_stations:
-        sec = mast_box_spar_sections(spec, float(z), layout)
+        sec = mast_cell_sections(spec, float(z), layout)
         upper, lower = _split_upper_lower(sec.outer_shell)
 
         # --- member validity (R-CON-1 "must not intersect") ---
@@ -96,7 +96,7 @@ def check_fit(spec, layout: BoxSparLayout, z_stations=None, clearance_tol: float
             checks = {
                 "fillet_vertical": 0.5 * web_h - layout.blend_radius,
                 "fillet_horizontal": band_half - layout.blend_radius,
-                "wall_room": web_h - 2.0 * (layout.spar_wall + layout.shell_wall),
+                "wall_room": web_h - 2.0 * (layout.cell_wall + layout.shell_wall),
             }
             for name, m in checks.items():
                 if m < best_margin:

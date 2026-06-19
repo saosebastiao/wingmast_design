@@ -44,7 +44,7 @@ def test_governing_cap_panel_is_eigen_feasible():
     """Closure: the optimized design's governing cap panel is buckling-feasible — exact λ ≥ 1.5,
     and the converged FEA confirms ≥ 1.5 (overstiff, so it only adds margin)."""
     spec = AmazonMastSpec()
-    opt = MyWayParams(n_spars=3, box_frac_chord=0.45, box_frac_thick=0.88,
+    opt = MyWayParams(n_cells=3, box_frac_chord=0.45, box_frac_thick=0.88,
                       t_shell=0.0025, t_web=0.003)
     r = verify_cap_panel_eigen(spec, opt)
     assert r.exact_analytical_lambda == pytest.approx(1.5, abs=0.05)   # design target met exactly

@@ -31,10 +31,10 @@ def test_out_of_bounds_is_detected():
 def test_builds_geometry_objects():
     ref = MastGeometryParameters.reference()
     spec = ref.to_mast_spec()
-    layout = ref.to_box_layout()
+    layout = ref.to_cell_layout()
     assert spec.span == GEOMETRY_PARAMS["span"].default
     assert spec.rotation_center_xc == GEOMETRY_PARAMS["rotation_center_xc"].default
-    assert layout.n_spars == int(GEOMETRY_PARAMS["n_box_spars"].default)
+    assert layout.n_cells == int(GEOMETRY_PARAMS["n_cells"].default)
     assert layout.blend_radius == GEOMETRY_PARAMS["blend_radius"].default
 
 

@@ -29,22 +29,22 @@ def main() -> None:
     print("  (A) mass-optimal — Amazon criteria (strength + cap-buckling λ≥1.5, no deflection cap):")
     bestA, runsA = optimize_amazon_beat(spec, amazon_per_mast_kg=a_kg, maxiter=30, seed=1)
     for r in runsA:
-        print(f"      n={r.n_spars}: {r.mass_per_mast_kg:5.0f} kg/mast ({r.vs_amazon_pct:+5.1f}%)  "
+        print(f"      n={r.n_cells}: {r.mass_per_mast_kg:5.0f} kg/mast ({r.vs_amazon_pct:+5.1f}%)  "
               f"λ {r.min_panel_buckling_lambda:.2f}  defl {r.tip_defl_m:.2f} m  fit {r.fit_margin_mm:.0f} mm")
-    print(f"      BEST(A): {bestA.n_spars} box spars → {bestA.mass_per_mast_kg:.0f} kg/mast "
+    print(f"      BEST(A): {bestA.n_cells} cells → {bestA.mass_per_mast_kg:.0f} kg/mast "
           f"({bestA.vs_amazon_pct:+.1f}%), both {bestA.mass_both_masts_kg:.0f} kg\n")
 
     print(f"  (B) stiffness-matched — also deflection ≤ Amazon's {a_defl:.2f} m:")
     bestB, runsB = optimize_amazon_beat(spec, amazon_per_mast_kg=a_kg, defl_cap_m=a_defl, maxiter=30, seed=1)
     for r in runsB:
-        print(f"      n={r.n_spars}: {r.mass_per_mast_kg:5.0f} kg/mast ({r.vs_amazon_pct:+5.1f}%)  "
+        print(f"      n={r.n_cells}: {r.mass_per_mast_kg:5.0f} kg/mast ({r.vs_amazon_pct:+5.1f}%)  "
               f"λ {r.min_panel_buckling_lambda:.2f}  defl {r.tip_defl_m:.2f} m")
-    print(f"      BEST(B): {bestB.n_spars} box spars → {bestB.mass_per_mast_kg:.0f} kg/mast "
+    print(f"      BEST(B): {bestB.n_cells} cells → {bestB.mass_per_mast_kg:.0f} kg/mast "
           f"({bestB.vs_amazon_pct:+.1f}%), both {bestB.mass_both_masts_kg:.0f} kg, defl {bestB.tip_defl_m:.2f} m\n")
 
     p = bestA.params
     print("  optimal section (A): "
-          f"{p.n_spars} spars, box {p.box_frac_chord:.2f}c × {p.box_frac_thick:.2f}t, "
+          f"{p.n_cells} spars, box {p.box_frac_chord:.2f}c × {p.box_frac_thick:.2f}t, "
           f"shell {p.t_shell*1e3:.1f} mm, web {p.t_web*1e3:.1f} mm")
     print(f"  PROGRESSION  Sponberg {a_kg:.0f} → my-method first-order ~526 → OPTIMIZED "
           f"{bestA.mass_per_mast_kg:.0f} kg/mast  ({bestA.vs_amazon_pct:+.1f}% vs Sponberg)")

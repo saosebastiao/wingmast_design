@@ -4,26 +4,26 @@ from __future__ import annotations
 
 import numpy as np
 
-from wingmast_design.geometry.box_spars import (
-    BoxSparLayout,
-    box_spar_sections,
+from wingmast_design.geometry.cells import (
+    CellLayout,
+    cell_sections,
     longeron_void_area,
-    mast_box_spar_sections,
+    mast_cell_sections,
 )
 from wingmast_design.geometry.rotating_mast import RotatingMastSpec
 
 
-def _section(n_spars=3, blend_radius=0.04):
-    return mast_box_spar_sections(
-        RotatingMastSpec(), z=0.0, layout=BoxSparLayout(n_spars=n_spars, blend_radius=blend_radius)
+def _section(n_cells=3, blend_radius=0.04):
+    return mast_cell_sections(
+        RotatingMastSpec(), z=0.0, layout=CellLayout(n_cells=n_cells, blend_radius=blend_radius)
     )
 
 
 def test_at_least_three_box_spars():
-    assert len(_section(n_spars=3).cells) == 3
-    s5 = _section(n_spars=5)
+    assert len(_section(n_cells=3).cells) == 3
+    s5 = _section(n_cells=5)
     assert len(s5.cells) == 5
-    assert len(s5.channels) == 4              # n_spars - 1 internal webs
+    assert len(s5.channels) == 4              # n_cells - 1 internal webs
     assert len(s5.webs) == 4
 
 
@@ -31,7 +31,7 @@ def test_n_spars_below_three_rejected():
     import pytest
 
     with pytest.raises(AssertionError):
-        box_spar_sections(RotatingMastSpec()._contour(0.0), BoxSparLayout(n_spars=2))
+        cell_sections(RotatingMastSpec()._contour(0.0), CellLayout(n_cells=2))
 
 
 def test_longeron_void_scales_with_blend_radius():
@@ -54,7 +54,7 @@ def test_bigger_blend_gives_bigger_channel_in_section():
 
 
 def test_webs_lie_between_le_and_te():
-    sec = _section(n_spars=4)
+    sec = _section(n_cells=4)
     oml = sec.outer_shell
     x_le, x_te = oml[:, 0].min(), oml[:, 0].max()
     assert len(sec.webs) == 3
@@ -63,7 +63,7 @@ def test_webs_lie_between_le_and_te():
 
 
 def test_cells_fit_within_oml_envelope():
-    sec = _section(n_spars=3)
+    sec = _section(n_cells=3)
     oml = sec.outer_shell
     allc = np.vstack(sec.cells)
     assert allc[:, 0].min() >= oml[:, 0].min() - 1e-6
@@ -75,10 +75,10 @@ def test_cells_fit_within_oml_envelope():
 def test_internal_cells_have_blend_curve_corners():
     """The web↔OML corners are rounded (blend-curve), and a larger blend radius trims the
     corner back further — 'convex spars with blend-curve corners' (R-GEO-5)."""
-    from wingmast_design.geometry.box_spars import _split_upper_lower, _y_on
+    from wingmast_design.geometry.cells import _split_upper_lower, _y_on
 
     def corner_gap(r: float) -> float:
-        sec = _section(n_spars=3, blend_radius=r)
+        sec = _section(n_cells=3, blend_radius=r)
         cell = sec.cells[1]                                  # center cell
         wr = sec.webs[1]                                     # its right web
         upper, _ = _split_upper_lower(sec.outer_shell)
@@ -114,15 +114,15 @@ def test_all_cells_are_simple_and_convex():
     import numpy as np
 
     checked = 0
-    for n_spars in (3, 4, 5):
+    for n_cells in (3, 4, 5):
         for z in np.linspace(0.0, spec.span, 9):
-            sec = mast_box_spar_sections(
-                spec, float(z), BoxSparLayout(n_spars=n_spars, blend_radius=0.04)
+            sec = mast_cell_sections(
+                spec, float(z), CellLayout(n_cells=n_cells, blend_radius=0.04)
             )
             for cell in sec.cells:
                 checked += 1
-                assert _is_simple(cell), f"self-intersecting cell at n={n_spars}, z={z:.1f}"
-                assert _is_convex(cell), f"non-convex cell at n={n_spars}, z={z:.1f}"
+                assert _is_simple(cell), f"self-intersecting cell at n={n_cells}, z={z:.1f}"
+                assert _is_convex(cell), f"non-convex cell at n={n_cells}, z={z:.1f}"
     assert checked == (3 + 4 + 5) * 9
 
 

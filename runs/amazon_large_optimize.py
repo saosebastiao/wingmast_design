@@ -46,13 +46,13 @@ def main() -> None:
     print("(A) mass-optimal — Amazon criteria (strength + cap-buckling λ≥1.5, no deflection cap):")
     runsA = [_run(spec, n, amz_kg, None, "A") for n in SPARS]
     bestA = min((r for r in runsA if r.result.feasible), key=lambda r: r.mass_per_mast_kg)
-    print(f"  → BEST(A): {bestA.n_spars} spars, {bestA.mass_per_mast_kg:.0f} kg/mast "
+    print(f"  → BEST(A): {bestA.n_cells} spars, {bestA.mass_per_mast_kg:.0f} kg/mast "
           f"({bestA.vs_amazon_pct:+.1f}%), both {bestA.mass_both_masts_kg:.0f} kg\n")
 
     print(f"(B) stiffness-matched — also deflection ≤ {amz_defl:.2f} m:")
     runsB = [_run(spec, n, amz_kg, amz_defl, "B") for n in SPARS]
     bestB = min((r for r in runsB if r.result.feasible), key=lambda r: r.mass_per_mast_kg)
-    print(f"  → BEST(B): {bestB.n_spars} spars, {bestB.mass_per_mast_kg:.0f} kg/mast "
+    print(f"  → BEST(B): {bestB.n_cells} spars, {bestB.mass_per_mast_kg:.0f} kg/mast "
           f"({bestB.vs_amazon_pct:+.1f}%), both {bestB.mass_both_masts_kg:.0f} kg, defl {bestB.tip_defl_m:.2f} m\n")
 
     print("Eigen-verifying the mass-optimal winner (governing cap panel)...")
@@ -61,7 +61,7 @@ def main() -> None:
           f"(+{ev.fea_overstiff_pct:.0f}% overstiff), feasible {ev.feasible}")
 
     p = bestA.params
-    print(f"\nOPTIMAL SECTION (A): {p.n_spars} box spars, box {p.box_frac_chord:.2f}c × "
+    print(f"\nOPTIMAL SECTION (A): {p.n_cells} cells, box {p.box_frac_chord:.2f}c × "
           f"{p.box_frac_thick:.2f}t, shell {p.t_shell*1e3:.1f} mm at ±{p.shell_helix_deg:.0f}° helix, "
           f"web {p.t_web*1e3:.1f} mm, cap layup {p.layup_f0:.0%} 0°.")
     print(f"HEADLINE: Sponberg {amz_kg:.0f} → optimized {bestA.mass_per_mast_kg:.0f} kg/mast "

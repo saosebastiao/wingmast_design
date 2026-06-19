@@ -1,7 +1,7 @@
 """Phase G deliverable: the parameterized twin rotating-wingmast assembly + fit + export.
 
 Builds the Oyster-595 twin-rig reference geometry from the typed parameter set
-(`R-GG-5`), reports the box-spar / longeron section set + the geometric-fit verdict
+(`R-GG-5`), reports the cell / longeron section set + the geometric-fit verdict
 (`R-GG-4`), and exports the tandem assembly to STL + STEP (`R-GG-6`, Article XI).
 
 Run: `just example 54_rotating_wingmast`
@@ -27,7 +27,7 @@ def main() -> None:
     t0 = time.perf_counter()
     params = MastGeometryParameters.reference()
     spec = params.to_mast_spec()
-    layout = params.to_box_layout()
+    layout = params.to_cell_layout()
 
     print("Twin rotating-wingmast — Oyster-595 reference parameters")
     print(f"  span {spec.span} m · chord {spec.root_chord}→{spec.tip_chord} m · "
@@ -38,9 +38,9 @@ def main() -> None:
     print(f"  journals: deck-partners z={upper:.2f} m, heel-step z={lower:.2f} m "
           f"(bury {upper - lower:.2f} m)")
 
-    # Box-spar / longeron section set at the root (R-GG-3)
+    # Conformal-cell / longeron section set at the root (R-GG-3)
     sec = assembly_root_section(params)
-    print(f"  box spars: {len(sec.cells)} cells, {len(sec.channels)} longeron channels; "
+    print(f"  cells: {len(sec.cells)} cells, {len(sec.channels)} longeron channels; "
           f"channel void {longeron_void_area(layout.blend_radius) * 1e4:.1f} cm² "
           f"(blend radius {layout.blend_radius * 1e3:.0f} mm)")
 

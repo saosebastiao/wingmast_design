@@ -1,7 +1,7 @@
 """Phase X3 deliverable: rebuild the Amazon OML with THIS project's method (`R-AMZ-4`).
 
 Same frozen 2.5:1 ellipse, same Amazon loads/criteria — but built the project way (3 and 4
-filament-wound box spars + co-bonded UD channel longerons + filament-wound shell). Confirms
+filament-wound cells + co-bonded UD channel longerons + filament-wound shell). Confirms
 manufacturability (`check_fit`) and reports the first-order mass of each vs the X2 his-construction
 estimate. (X4 then optimizes the internal distribution to minimise mass.)
 
@@ -26,18 +26,18 @@ def main() -> None:
     spec = AmazonMastSpec()
     amz = estimate_amazon_mast_mass(spec)
 
-    print("Rebuild Amazon's OML with the project method — 3 vs 4 box spars + UD longerons + FW shell")
+    print("Rebuild Amazon's OML with the project method — 3 vs 4 cells + UD longerons + FW shell")
     print(f"  baseline (Sponberg's single box + glass fairings, X2): {amz.mass_per_mast_kg:.0f} kg/mast")
     E_cap, E_shell = MyWayParams().moduli()
     print(f"  laminates: 0° cap {E_cap/1e9:.0f} GPa, helical FW shell {E_shell/1e9:.0f} GPa\n")
 
     best = None
     for n in (3, 4):
-        p = MyWayParams(n_spars=n)
+        p = MyWayParams(n_cells=n)
         fit = myway_fit(spec, p)
         t_root, _, gov = myway_section(0.0, spec, p)
         r = estimate_myway_mass(spec, p, amazon_per_mast_kg=amz.mass_per_mast_kg)
-        print(f"  --- {n} box spars ---")
+        print(f"  --- {n} cells ---")
         print(f"    manufacturable: {'YES' if fit.feasible else 'NO'} "
               f"(check_fit margin {fit.margin*1e3:.0f} mm)")
         print(f"    root cap wall {t_root*1e3:.1f} mm ({gov}) — vs Amazon's 13.5 mm buckling-floor")
@@ -52,7 +52,7 @@ def main() -> None:
 
     assert best is not None, "at least one spar count must be feasible"
     n_b, m_b, pct_b = best
-    print(f"  BEST first-order: {n_b} box spars → {m_b:.0f} kg/mast ({pct_b:+.1f}% vs Sponberg), "
+    print(f"  BEST first-order: {n_b} cells → {m_b:.0f} kg/mast ({pct_b:+.1f}% vs Sponberg), "
           f"both masts {2*m_b:.0f} kg.")
     print("  (X4 optimizes the wall/cap/shell/longeron distribution to push further.)")
     print(f"DONE in {time.perf_counter() - t0:.1f} s")

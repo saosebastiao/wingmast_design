@@ -1,4 +1,4 @@
-"""First-order stiffness/strength/buckling estimate for the bare box-spar wingmast.
+"""First-order stiffness/strength/buckling estimate for the bare cell wingmast.
 
 A *representative* analytical check (NOT a converged FEA) to ground the geometry decision —
 replacing the earlier non-representative toy (isotropic solid rod + tip point load). Here:
@@ -9,7 +9,7 @@ replacing the earlier non-representative toy (isotropic solid rod + tip point lo
     to the CE). The base datum is taken at z=0 (the wing root) for this first-order check — the
     0.9 m partners offset is absorbed into the simplification (a ~4% lever change the
     deflection/buckling conclusion is insensitive to);
-  * the section is a **box spar with UD caps at the section depth** (E1 ~135 GPa carbon, the
+  * the section is a **cell with UD caps at the section depth** (E1 ~135 GPa carbon, the
     bending load path is the laid 0° longerons), tapering root→tip;
   * checked against R-PERF: deflection ≤ 2% span (0.44 m), strength R ≥ 2, and a first-order
     cap-compression local-buckling margin (with an orthotropic knockdown — see below).
@@ -42,7 +42,7 @@ BUCKLE_KNOCKDOWN = 0.4  # orthotropic 0°-cap penalty on the isotropic plate σ_
                         # transverse stiffness E2 ~ E1/16 ⇒ the isotropic formula is optimistic)
 
 
-def analyse(chord_root=1.0, taper=0.6, tc=0.18, t_cap=0.004, box_frac=0.6, n_spars=3, n=400):
+def analyse(chord_root=1.0, taper=0.6, tc=0.18, t_cap=0.004, box_frac=0.6, n_cells=3, n=400):
     z = np.linspace(0.0, SPAN, n)
     chord = chord_root * (1.0 + (taper - 1.0) * z / SPAN)
     depth = tc * chord                              # section thickness = bending depth
@@ -73,9 +73,9 @@ def analyse(chord_root=1.0, taper=0.6, tc=0.18, t_cap=0.004, box_frac=0.6, n_spa
     sigma_base = M[0] * (depth[0] / 2.0) / I[0]
     R = SIGMA_ALLOW / sigma_base
 
-    # first-order cap-compression local buckling: cap panel between webs (width b/n_spars).
+    # first-order cap-compression local buckling: cap panel between webs (width b/n_cells).
     # isotropic plate formula × orthotropic knockdown (the isotropic value is OPTIMISTIC).
-    b_panel = b[0] / n_spars
+    b_panel = b[0] / n_cells
     sigma_cr_iso = 4.0 * np.pi ** 2 * E_CAP / (12.0 * (1 - NU ** 2)) * (t_cap / b_panel) ** 2
     sigma_cr = BUCKLE_KNOCKDOWN * sigma_cr_iso
     lam_buckle = sigma_cr / sigma_base
