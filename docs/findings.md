@@ -2231,8 +2231,15 @@ Feasibility judged on the conservative exact floor (≥1.5); FEA adds margin. **
 **CAD == sizer.** `examples/62` now loads `exports/conformal_best.json` and builds on the SIZED
 cell-count (4), blend, walls and **cap schedule t_cap(z)** (6→2 mm). Residual honesty: the CAD
 hollows each cell with a single (cap) wall via `offset`, so its webs come out thicker than the
-sizer's separate `t_web` → CAD wing ≈ 517 kg vs the sizer's ≈ 477 kg (+~10 %); the **cap schedule
+sizer's separate `t_web` → CAD wing ≈ 528 kg vs the sizer's ≈ 477 kg (+~10 %); the **cap schedule
 matches exactly**, the discrepancy is the uniform-offset construction, not a design mismatch.
+
+**Longerons = the true fillet-gap channels (user-driven correctness fix).** `cells.cell_sections`
+now returns the **actual** longeron-channel polygons (`LongeronChannel.top_poly`/`bottom_poly`): the
+curved-triangle voids the `blend_radius` cell-corner fillets open between two adjacent cells and the
+shell, top + bottom of each shared web (LE/TE cells have 2 such corners, interior cells 4). `examples/62`
+lofts these directly (≈12 kg UD), replacing the free-standing wedge approximation — the longeron
+geometry is now derived from the cells' own rounding, single-source-of-truth (test: `test_cells.py`).
 
 **This supersedes the X4 (−8.8/−27.6 %) and X4+ (−18.7/−32.8 %) "beats Sponberg" headlines** — those
 were idealised-box artifacts. **Honest standing result: the buildable conformal multi-cell torsion

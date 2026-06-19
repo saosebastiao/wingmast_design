@@ -75,12 +75,20 @@ else:                                                       # representative fal
     _CAP_Z = _CAP_T = np.empty(0)
     T_CAP_ROOT, T_CAP_TIP = 0.009, 0.0025
 
-CELL_COLORS = [(0.20, 0.55, 0.85), (0.32, 0.72, 0.45), (0.86, 0.45, 0.20),
-               (0.70, 0.35, 0.75), (0.40, 0.75, 0.78)]
-CELL_NAMES = ["cell_LE_Dcell", "cell_mid", "cell_TE", "cell_mid2", "cell_mid3"]
+_LE_RGB, _TE_RGB = (0.20, 0.55, 0.85), (0.86, 0.45, 0.20)
+_MID_RGB = [(0.32, 0.72, 0.45), (0.70, 0.35, 0.75), (0.40, 0.75, 0.78), (0.90, 0.62, 0.25)]
 GOLD = (0.95, 0.78, 0.15)
 SHELL_RGB = (0.62, 0.64, 0.70)
 STOCK_RGB = (0.42, 0.42, 0.50)
+
+
+def _cell_style(k: int, n: int) -> tuple[str, tuple, str]:
+    """(stl_name, rgb, legend) — position-aware: cell 0 = LE (D-cell), cell n-1 = TE, rest mid."""
+    if k == 0:
+        return "cell_LE_Dcell", _LE_RGB, "cell — LE (D-cell)"
+    if k == n - 1:
+        return "cell_TE", _TE_RGB, "cell — TE"
+    return f"cell_mid{k}", _MID_RGB[(k - 1) % len(_MID_RGB)], f"cell — mid {k}"
 
 
 def _face(poly: np.ndarray):
@@ -114,22 +122,6 @@ def _hollow(outer_polys, t_wall_per_z, zs):
     inner = _loft([Plane(origin=(0, 0, float(z))) * offset(_face(p), amount=-float(t))
                    for z, p, t in zip(zs, outer_polys, t_wall_per_z)])
     return outer - inner
-
-
-def _env_y(x: np.ndarray, a: float, b: float, top: bool) -> np.ndarray:
-    s = 1.0 if top else -1.0
-    return s * b * np.sqrt(np.clip(1.0 - (x / a) ** 2, 0.0, 1.0))
-
-
-def _longeron_poly(xw: float, a: float, b: float, r: float, top: bool, n: int = 11) -> np.ndarray:
-    """The corner-channel longeron at web ``xw``: a wedge whose curved edge hugs the shell inner
-    (the ellipse ``a×b``) from xw-r to xw+r, tapering to an apex ``r`` inboard — i.e. the UD that
-    fills the void the two neighbouring cells' blended corners leave under the shell."""
-    xs = np.linspace(xw - r, xw + r, n)
-    ys = _env_y(xs, a, b, top)
-    s = 1.0 if top else -1.0
-    apex = np.array([[xw, _env_y(np.array([xw]), a, b, top)[0] - s * r]])
-    return np.vstack([np.column_stack([xs, ys]), apex])
 
 
 def _cap_wall(z: float, span: float) -> float:
@@ -166,15 +158,17 @@ def main() -> None:
     print(f"  cells:     valid {all(s.is_valid for s in cells)}, "
           f"{sum(s.volume for s in cells) * RHO:6.0f} kg  (caps {T_CAP_ROOT*1e3:.0f}→{T_CAP_TIP*1e3:.1f} mm)")
 
-    # --- UD longerons: corner channels at each internal web, top + bottom ---------------------
+    # --- UD longerons: the TRUE inter-cell channel gaps (from cells.cell_sections), the void the
+    # blend fillets leave between two cells and the shell, lofted top + bottom of each web ---------
     longerons = []
     for wi in range(N_CELLS - 1):
-        for top in (True, False):
-            faces = []
-            for z, c, t, sec in zip(zs, chords, thicks, secs):
-                a, b = (c - 2 * T_SHELL) / 2.0, (t - 2 * T_SHELL) / 2.0
-                xw = float(sec.webs[wi])
-                faces.append(Plane(origin=(0, 0, float(z))) * _face(_longeron_poly(xw, a, b, BLEND, top)))
+        for attr in ("top_poly", "bottom_poly"):
+            polys = [getattr(s.channels[wi], attr) for s in secs]
+            if any(len(p) < 3 for p in polys):
+                continue                                 # degenerate at some station — skip
+            # 20 pts: enough for the curved-triangle gap; more collapses OCC's thin-sliver loft
+            faces = [Plane(origin=(0, 0, float(z))) * _face(resample_closed_polyline(np.asarray(p, float), 20))
+                     for z, p in zip(zs, polys)]
             longerons.append(_loft(faces))
     print(f"  longerons: valid {all(s.is_valid for s in longerons)}, "
           f"{sum(s.volume for s in longerons) * RHO:6.0f} kg  ({len(longerons)} corner channels)")
@@ -208,9 +202,10 @@ def main() -> None:
     pdir.mkdir(parents=True, exist_ok=True)
     manifest = []
     for k, s in enumerate(cells):
-        s.color, s.label = Color(*CELL_COLORS[k]), CELL_NAMES[k]
-        export_stl(s, str(pdir / f"{CELL_NAMES[k]}.stl"))
-        manifest.append((CELL_NAMES[k], CELL_COLORS[k], 1.0))
+        name, rgb, _ = _cell_style(k, N_CELLS)
+        s.color, s.label = Color(*rgb), name
+        export_stl(s, str(pdir / f"{name}.stl"))
+        manifest.append((name, rgb, 1.0))
     for i, lg in enumerate(longerons):
         lg.color, lg.label = Color(*GOLD), f"longeron_{i}"
         export_stl(lg, str(pdir / f"longeron_{i}.stl"))
@@ -266,22 +261,20 @@ def _render_section(spec: AmazonMastSpec, layout: CellLayout, out: Path) -> None
     ax.plot([], [], "s", color=SHELL_RGB, label=f"FW shell ({T_SHELL*1e3:.0f} mm)")
 
     sec = cell_sections(env, layout)
-    a, b = (c0 - 2 * T_SHELL) / 2.0, (t0 - 2 * T_SHELL) / 2.0
     cap = _cap_wall(0.0, spec.sail_track_length)
-    names = ["cell — LE (D-cell)", "cell — mid", "cell — TE", "cell — mid2", "cell — mid3"]
     for k, cell in enumerate(sec.cells):
+        _, rgb, legend = _cell_style(k, layout.n_cells)
         o = resample_closed_polyline(np.asarray(cell, float), 200)
         inner = offset(_face(o), amount=-cap).faces()[0].outer_wire()
         iw = np.array([((inner @ (i / 160)).X, (inner @ (i / 160)).Y) for i in range(161)])
-        ax.fill(o[:, 0], o[:, 1], color=CELL_COLORS[k], ec="k", lw=0.9)   # cap material
-        ax.fill(iw[:, 0], iw[:, 1], color="white", ec="k", lw=0.6)        # hollow void (closed wire)
-        ax.plot([], [], "s", color=CELL_COLORS[k], label=f"{names[k]} (hollow, cap {cap*1e3:.0f} mm)")
-    for wi in range(layout.n_cells - 1):
-        xw = float(sec.webs[wi])
-        for top in (True, False):
-            p = _longeron_poly(xw, a, b, layout.blend_radius, top, n=15)
-            ax.fill(p[:, 0], p[:, 1], color=GOLD, ec="k", lw=0.5)
-    ax.plot([], [], "s", color=GOLD, label="UD longeron (corner channel)")
+        ax.fill(o[:, 0], o[:, 1], color=rgb, ec="k", lw=0.9)             # cap material
+        ax.fill(iw[:, 0], iw[:, 1], color="white", ec="k", lw=0.6)       # hollow void (closed wire)
+        ax.plot([], [], "s", color=rgb, label=f"{legend} (hollow, cap {cap*1e3:.0f} mm)")
+    for ch in sec.channels:                       # the TRUE fillet-gap channels (top + bottom)
+        for p in (ch.top_poly, ch.bottom_poly):
+            if len(p) >= 3:
+                ax.fill(p[:, 0], p[:, 1], color=GOLD, ec="k", lw=0.6)
+    ax.plot([], [], "s", color=GOLD, label="UD longeron (fillet-gap channel)")
 
     ax.set_aspect("equal")
     ax.grid(alpha=0.18)
