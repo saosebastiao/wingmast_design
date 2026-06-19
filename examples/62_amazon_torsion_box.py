@@ -130,10 +130,18 @@ def _centered_ellipse(chord: float, thick: float, n: int = 140) -> np.ndarray:
     return out
 
 
-def _hollow(outer_polys, t_wall_per_z, zs):
+def _inner_polyline(outer_poly, t, n=180):
+    """Inner wall polyline = the cell outline offset inward by ``t``, resampled (narrow cells —
+    n=6 — choke OCC's loft if the offset face is lofted at full resolution)."""
+    w = offset(_face(outer_poly), amount=-float(t)).faces()[0].outer_wire()
+    return np.array([((w @ (i / n)).X, (w @ (i / n)).Y) for i in range(n)])
+
+
+def _hollow(outer_polys, t_wall_per_z, zs, n_inner=64):
     outer = _loft([Plane(origin=(0, 0, float(z))) * _face(p) for z, p in zip(zs, outer_polys)])
-    inner = _loft([Plane(origin=(0, 0, float(z))) * offset(_face(p), amount=-float(t))
-                   for z, p, t in zip(zs, outer_polys, t_wall_per_z)])
+    inners = [resample_closed_polyline(_inner_polyline(p, t), n_inner)
+              for p, t in zip(outer_polys, t_wall_per_z)]
+    inner = _loft([Plane(origin=(0, 0, float(z))) * _face(ip) for z, ip in zip(zs, inners)])
     return outer - inner
 
 
