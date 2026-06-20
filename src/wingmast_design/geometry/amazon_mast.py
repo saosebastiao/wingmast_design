@@ -30,7 +30,7 @@ project airfoil ordering — composition, not a new loft path.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 from build123d import BuildPart, Plane, add, loft
@@ -179,6 +179,57 @@ class AmazonMastSpec:
         """Unit-chord section contour (constant 2.5:1 ellipse; ``_frac`` unused — the section
         shape is span-invariant, only the chord scales)."""
         return ellipse_coords(self.n_airfoil_points // 2)
+
+
+@dataclass(frozen=True)
+class ScaledAmazonMast:
+    """Amazon OML scaled with INDEPENDENT length (``s_l``) and section (``s_s``) factors — for
+    studying larger / fatter free-standing masts. ``s_l == s_s`` is a pure geometric scale-up
+    (RM ∝ L⁴); ``s_s ≠ s_l`` fattens/slims the section at a fixed height. The 2.5:1 ellipse SHAPE
+    is unchanged. Duck-types the `AmazonMastSpec` interface the sizer + CAD consume (chord/thickness/
+    section_oml/journal stations), so it drops into `amazon_conformal` and `examples/62` unchanged.
+    """
+
+    s_l: float = 1.0
+    s_s: float = 1.0
+    base: AmazonMastSpec = field(default_factory=AmazonMastSpec)
+
+    # length-scaled (mast height + journal stations)
+    @property
+    def sail_track_length(self) -> float: return self.base.sail_track_length * self.s_l
+    @property
+    def below_root_length(self) -> float: return self.base.below_root_length * self.s_l
+    @property
+    def transition_length(self) -> float: return self.base.transition_length * self.s_l
+    @property
+    def heel_z(self) -> float: return self.base.heel_z * self.s_l
+    @property
+    def partners_z(self) -> float: return self.base.partners_z * self.s_l
+    @property
+    def bury(self) -> float: return self.base.bury * self.s_l
+    @property
+    def span(self) -> float: return self.sail_track_length
+    @property
+    def total_length(self) -> float: return self.sail_track_length + self.below_root_length
+    @property
+    def journal_stations(self) -> tuple[float, float]: return (self.partners_z, self.heel_z)
+    # section-scaled (chord / thickness / bearing-stock OD)
+    @property
+    def deck_od(self) -> float: return self.base.deck_od * self.s_s
+    @property
+    def heel_od(self) -> float: return self.base.heel_od * self.s_s
+    @property
+    def root_chord(self) -> float: return self.base.root_chord * self.s_s
+    @property
+    def rotation_center_xc(self) -> float: return self.base.rotation_center_xc      # fraction
+    @property
+    def n_airfoil_points(self) -> int: return self.base.n_airfoil_points
+
+    def chord_at_z(self, z: float) -> float: return self.base.chord_at_z(z / self.s_l) * self.s_s
+    def thickness_at_z(self, z: float) -> float: return self.base.thickness_at_z(z / self.s_l) * self.s_s
+    def section_oml(self, z: float, n_pts: int | None = None) -> np.ndarray:
+        return self.base.section_oml(z / self.s_l, n_pts) * self.s_s
+    def _stock_od_at_z(self, z: float) -> float: return self.base._stock_od_at_z(z / self.s_l) * self.s_s
 
 
 def build_amazon_mast_solid(spec: AmazonMastSpec):

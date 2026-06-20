@@ -19,7 +19,6 @@ from pathlib import Path
 from paraview.simple import (  # type: ignore[import-not-found]
     Clip,
     GetActiveViewOrCreate,
-    Hide,
     Render,
     ResetCamera,
     OpenDataFile,
@@ -32,7 +31,7 @@ ROOT = Path(__file__).resolve().parent.parent
 PDIR = ROOT / "exports" / "torsion_box"
 OUT = ROOT / "exports"
 
-ZTOP = 1.7          # root-segment clip height [m] (stubby → readable 3/4 aspect)
+ZTOP = 4.5          # root-segment clip height [m] (covers stock+transition for the continuous build)
 DX, DY, DZ = 0.70, 0.62, 1.8     # explode offsets
 
 

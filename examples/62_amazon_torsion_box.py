@@ -23,6 +23,7 @@ Run: `just example 62_amazon_torsion_box`
 from __future__ import annotations
 
 import json
+import os
 import time
 from pathlib import Path
 
@@ -40,30 +41,32 @@ from build123d import (
     export_stl,
     loft,
     make_face,
-    offset,
 )
 
-from wingmast_design.beams.cross_section import resample_closed_polyline
-from wingmast_design.geometry.amazon_mast import AmazonMastSpec, ellipse_coords
-from wingmast_design.geometry.cells import CellLayout, cell_sections
+from wingmast_design.geometry.amazon_mast import ScaledAmazonMast
+from wingmast_design.geometry.cells import _split_upper_lower, _y_on
 
-# ---- build parameters. If the as-built re-size has been run (exports/conformal_best.json from
-# `just py runs/conformal_optimize.py`), the cell count / blend / walls / cap schedule are taken
-# from it so the CAD walls ARE the sized walls; otherwise a representative taper is used. --------
+# ---- build parameters. The design is read from a JSON (default exports/conformal_best.json, the
+# as-built re-size; override with env TORSION_BOX_DESIGN to export a scaled mast). It carries the
+# cell count / blend / walls / cap schedule so the CAD walls ARE the sized walls, and optional
+# length/section scales `s_l`/`s_s` (1.0 = Amazon baseline). --------------------------------------
 N_ST = 13                      # spanwise stations (loft sections) over the wing
 N_PTS = 96                     # points per cell outline
 RHO = 1600.0                   # CFRP density [kg/m³]
 
 _SIZED = None
-_sized_path = Path(__file__).resolve().parent.parent / "exports" / "conformal_best.json"
+_sized_path = Path(os.environ.get(
+    "TORSION_BOX_DESIGN", Path(__file__).resolve().parent.parent / "exports" / "conformal_best.json"))
 if _sized_path.exists():
     _SIZED = json.loads(_sized_path.read_text())
 
-if _SIZED:                                                  # sized (as-built re-size)
+if _SIZED:                                                  # sized design (Amazon or scaled)
     N_CELLS = int(_SIZED["n_cells"])
     BLEND = float(_SIZED["blend_radius"])
     T_SHELL = float(_SIZED["t_shell"])
     T_WEB = float(_SIZED["t_web"])
+    S_L = float(_SIZED.get("s_l", 1.0))
+    S_S = float(_SIZED.get("s_s", 1.0))
     _CAP_Z = np.array([z for z, _ in _SIZED["cap_schedule"]])
     _CAP_T = np.array([t for _, t in _SIZED["cap_schedule"]])
     T_CAP_ROOT, T_CAP_TIP = float(_CAP_T[0]), float(_CAP_T[-1])
@@ -72,23 +75,13 @@ else:                                                       # representative fal
     BLEND = 0.030
     T_SHELL = 0.003
     T_WEB = 0.004
+    S_L = S_S = 1.0
     _CAP_Z = _CAP_T = np.empty(0)
     T_CAP_ROOT, T_CAP_TIP = 0.009, 0.0025
 
-_LE_RGB, _TE_RGB = (0.20, 0.55, 0.85), (0.86, 0.45, 0.20)
-_MID_RGB = [(0.32, 0.72, 0.45), (0.70, 0.35, 0.75), (0.40, 0.75, 0.78), (0.90, 0.62, 0.25)]
-GOLD = (0.95, 0.78, 0.15)
-SHELL_RGB = (0.62, 0.64, 0.70)
-STOCK_RGB = (0.42, 0.42, 0.50)
-
-
-def _cell_style(k: int, n: int) -> tuple[str, tuple, str]:
-    """(stl_name, rgb, legend) — position-aware: cell 0 = LE (D-cell), cell n-1 = TE, rest mid."""
-    if k == 0:
-        return "cell_LE_Dcell", _LE_RGB, "cell — LE (D-cell)"
-    if k == n - 1:
-        return "cell_TE", _TE_RGB, "cell — TE"
-    return f"cell_mid{k}", _MID_RGB[(k - 1) % len(_MID_RGB)], f"cell — mid {k}"
+_LE_RGB = (0.20, 0.55, 0.85)      # cell caps
+GOLD = (0.95, 0.78, 0.15)         # webs
+SHELL_RGB = (0.62, 0.64, 0.70)    # FW shell
 
 
 def _face(poly: np.ndarray):
@@ -100,49 +93,38 @@ def _face(poly: np.ndarray):
     return sk.sketch
 
 
-def _loft(faces):
+def _loft(faces, ruled=True):
     with BuildPart() as part:
         for f in faces:
             add(f)
-        loft(ruled=True)
+        loft(ruled=ruled)
     return part.part
 
 
-def _loft_channel(polys, zs):
-    """Loft a thin channel sliver. OCC chokes on thin slivers at high point counts, and the smaller
-    the fillet the fewer points it tolerates — so try decreasing counts. Returns None if none work."""
-    for npts in (16, 12, 10, 8):
-        try:
-            faces = [Plane(origin=(0, 0, float(z))) * _face(resample_closed_polyline(np.asarray(p, float), npts))
-                     for z, p in zip(zs, polys)]
-            return _loft(faces)
-        except Exception:
-            continue
-    return None
+def _inset(poly: np.ndarray, t: float) -> np.ndarray:
+    """Inward normal offset of a convex closed polyline by ``t`` (keeps the project ordering, so it
+    works through the airfoil→round morph). Used to get the shell-inner envelope from any OML."""
+    p = np.asarray(poly, float)
+    if len(p) > 1 and np.allclose(p[0], p[-1]):
+        p = p[:-1]
+    n = len(p)
+    cen = p.mean(axis=0)
 
+    def innorm(e, b):
+        nn = np.array([-e[1], e[0]], float)
+        ln = np.hypot(nn[0], nn[1])
+        nn = nn / ln if ln > 1e-12 else nn
+        return -nn if np.dot(nn, cen - b) < 0 else nn
 
-def _centered_ellipse(chord: float, thick: float, n: int = 140) -> np.ndarray:
-    """Project-ordered ellipse (upper-TE→LE→lower-TE) of given chord×thick, centred at origin."""
-    e = ellipse_coords(n // 2)
-    out = e.copy()
-    out[:, 0] = (e[:, 0] - 0.5) * chord
-    out[:, 1] = e[:, 1] / 0.40 * (thick / chord) * chord
-    return out
-
-
-def _inner_polyline(outer_poly, t, n=180):
-    """Inner wall polyline = the cell outline offset inward by ``t``, resampled (narrow cells —
-    n=6 — choke OCC's loft if the offset face is lofted at full resolution)."""
-    w = offset(_face(outer_poly), amount=-float(t)).faces()[0].outer_wire()
-    return np.array([((w @ (i / n)).X, (w @ (i / n)).Y) for i in range(n)])
-
-
-def _hollow(outer_polys, t_wall_per_z, zs, n_inner=64):
-    outer = _loft([Plane(origin=(0, 0, float(z))) * _face(p) for z, p in zip(zs, outer_polys)])
-    inners = [resample_closed_polyline(_inner_polyline(p, t), n_inner)
-              for p, t in zip(outer_polys, t_wall_per_z)]
-    inner = _loft([Plane(origin=(0, 0, float(z))) * _face(ip) for z, ip in zip(zs, inners)])
-    return outer - inner
+    out = np.empty((n, 2))
+    for i in range(n):
+        a, b, c = p[(i - 1) % n], p[i], p[(i + 1) % n]
+        n1, n2 = innorm(b - a, b), innorm(c - b, b)
+        bis = n1 + n2
+        lb = np.hypot(bis[0], bis[1])
+        bis = bis / lb if lb > 1e-9 else innorm(c - a, b)
+        out[i] = b + bis * (t / max(float(np.dot(bis, n1)), 0.3))
+    return np.vstack([out, out[0]])
 
 
 def _cap_wall(z: float, span: float) -> float:
@@ -154,95 +136,75 @@ def _cap_wall(z: float, span: float) -> float:
 
 def main() -> None:
     t0 = time.perf_counter()
-    spec = AmazonMastSpec()
+    spec = ScaledAmazonMast(s_l=S_L, s_s=S_S)
     span = spec.sail_track_length
-    layout = CellLayout(n_cells=N_CELLS, blend_radius=BLEND)
-    zs = np.linspace(0.0, span, N_ST)
+    # ONE continuous structure heel→masthead: the section morphs airfoil→round through the
+    # transition (section_oml), so the cells/longerons/shell loft straight THROUGH the stock — the
+    # outer shell itself becomes the round bearing journals. Dense stations through the morph.
+    zs = np.unique(np.concatenate([np.linspace(spec.heel_z, spec.partners_z, 7),
+                                   np.linspace(spec.partners_z, 0.0, 14),   # dense ellipse→round morph
+                                   np.linspace(0.0, span, N_ST)]))
 
-    print(f"Conformal multi-cell torsion box — {N_CELLS} cells (D-cell + {N_CELLS-2} interior + TE)"
-          " + corner longerons + FW shell + stock")
+    print(f"Continuous conformal torsion box — {N_CELLS} cells lofted masthead→heel "
+          "(airfoil morphs to round bearing journals; cells run through the stock, no separate tube)")
 
-    # --- per-station geometry: inset envelope (shell inner) → conformal cells + webs ----------
-    chords = [spec.chord_at_z(float(z)) for z in zs]
-    thicks = [spec.thickness_at_z(float(z)) for z in zs]
-    env = [_centered_ellipse(c - 2 * T_SHELL, t - 2 * T_SHELL) for c, t in zip(chords, thicks)]
-    secs = [cell_sections(e, layout) for e in env]
-    caps = [_cap_wall(float(z), span) for z in zs]
-
-    # --- N conformal cells (each hollowed: curved caps = t_cap(z), webs = T_WEB) --------------
-    cells = []
-    for k in range(N_CELLS):
-        polys = [resample_closed_polyline(np.asarray(s.cells[k], float), N_PTS) for s in secs]
-        # cap wall governs the offset; webs are thicker but a single inward offset reads cleanly
-        s = _hollow(polys, caps, zs)
-        cells.append(s)
-    print(f"  cells:     valid {all(s.is_valid for s in cells)}, "
-          f"{sum(s.volume for s in cells) * RHO:6.0f} kg  (caps {T_CAP_ROOT*1e3:.0f}→{T_CAP_TIP*1e3:.1f} mm)")
-
-    # --- UD longerons: the TRUE inter-cell channel gaps (from cells.cell_sections), the void the
-    # blend fillets leave between two cells and the shell, lofted top + bottom of each web ---------
-    longerons, n_skip = [], 0
-    for wi in range(N_CELLS - 1):
-        for attr in ("top_poly", "bottom_poly"):
-            polys = [getattr(s.channels[wi], attr) for s in secs]
-            lg = None if any(len(p) < 3 for p in polys) else _loft_channel(polys, zs)
-            if lg is None:
-                n_skip += 1
-            else:
-                longerons.append(lg)
-    print(f"  longerons: valid {all(s.is_valid for s in longerons)}, "
-          f"{sum(s.volume for s in longerons) * RHO:6.0f} kg  ({len(longerons)} corner channels"
-          f"{f', {n_skip} too thin to loft' if n_skip else ''})")
-
-    # --- FW outer shell (OML → inset envelope) -----------------------------------------------
+    # --- nested closed sections (each morphs airfoil→round as ONE convex curve → lofts cleanly) --
     oml = [spec.section_oml(float(z), n_pts=2 * (N_PTS // 2)) for z in zs]
-    shell = (_loft([Plane(origin=(0, 0, float(z))) * _face(p) for z, p in zip(zs, oml)])
-             - _loft([Plane(origin=(0, 0, float(z))) * _face(p) for z, p in zip(zs, env)]))
+    env = [_inset(o, T_SHELL) for o in oml]                        # shell inner
+    caps = [_cap_wall(float(z), span) for z in zs]
+    env_in = [_inset(e, c) for e, c in zip(env, caps)]            # cap inner = the cell-void boundary
+
+    def _tube(outer_polys, inner_polys):
+        return (_loft([Plane(origin=(0, 0, float(z))) * _face(np.asarray(p, float)) for z, p in zip(zs, outer_polys)])
+                - _loft([Plane(origin=(0, 0, float(z))) * _face(np.asarray(p, float)) for z, p in zip(zs, inner_polys)]))
+
+    shell = _tube(oml, env)                                       # FW outer skin → round journals
+    cap_wall = _tube(env, env_in)                                 # the cell caps (one annular wall)
     print(f"  shell:     valid {shell.is_valid}, {shell.volume * RHO:6.0f} kg  ({T_SHELL*1e3:.0f} mm wall)")
+    print(f"  cell caps: valid {cap_wall.is_valid}, {cap_wall.volume * RHO:6.0f} kg "
+          f"(caps {T_CAP_ROOT*1e3:.0f}→{T_CAP_TIP*1e3:.1f} mm, masthead→heel)")
 
-    # --- round bearing stock (below deck partners) -------------------------------------------
-    zb = np.linspace(spec.heel_z, -0.04, 6)
-    stock = _loft([Plane(origin=(0, 0, float(z))) * _face(spec.section_oml(float(z), n_pts=80))
-                   for z in zb])
-    print(f"  stock:     valid {stock.is_valid}, {stock.volume * RHO:6.0f} kg")
+    # --- internal webs at the N-1 band boundaries, spanning the cell void, lofted through the morph
+    webs = []
+    for k in range(1, N_CELLS):
+        faces = []
+        for z, e, c in zip(zs, env, caps):
+            xle, xte = float(e[:, 0].min()), float(e[:, 0].max())
+            xw = xle + k / N_CELLS * (xte - xle)
+            up, lo = _split_upper_lower(np.asarray(e, float))
+            yhi = float(_y_on(up, np.array([xw]))[0]) - c
+            ylo = float(_y_on(lo, np.array([xw]))[0]) + c
+            rect = np.array([[xw - T_WEB / 2, ylo], [xw + T_WEB / 2, ylo],
+                             [xw + T_WEB / 2, yhi], [xw - T_WEB / 2, yhi], [xw - T_WEB / 2, ylo]])
+            faces.append(Plane(origin=(0, 0, float(z))) * _face(rect))
+        webs.append(_loft(faces))
+    print(f"  webs:      valid {all(w.is_valid for w in webs)}, "
+          f"{sum(w.volume for w in webs) * RHO:6.0f} kg  ({len(webs)} internal webs → {N_CELLS} cells)")
 
-    struct = sum(s.volume for s in cells) + sum(s.volume for s in longerons) + shell.volume
-    if _SIZED:
-        print(f"\n  structural mass/mast = {struct * RHO:.0f} kg (wing, SIZED walls from the as-built "
-              f"re-size; sizer wing ≈ {_SIZED['mass_per_mast_kg'] - 111:.0f} kg + {111} kg stock = "
-              f"{_SIZED['mass_per_mast_kg']:.0f} kg/mast, {_SIZED['vs_amazon_pct']:+.1f}% vs Sponberg).")
-        print("  NB: the CAD hollows each cell with a single (cap) wall, so its webs are thicker than "
-              "the sizer's t_web → CAD wing runs ~10% over the sizer; the cap SCHEDULE matches exactly.")
-    else:
-        print(f"\n  structural mass/mast = {struct * RHO:.0f} kg (representative walls; run "
-              "`just py runs/conformal_optimize.py` for the sized schedule).")
+    struct = shell.volume + cap_wall.volume + sum(w.volume for w in webs)
+    src = "SIZED cap schedule" if _SIZED else "representative walls"
+    print(f"\n  continuous structural mass/mast = {struct * RHO:.0f} kg ({src}; cells run masthead→heel, "
+          "stock cells hold the root cap wall — the cells lofted through the stock per the build brief).")
 
     # --- colour, label, export (per-part STL for ParaView + a coloured STEP) -------------------
     out = Path(__file__).resolve().parent.parent / "exports"
     pdir = out / "torsion_box"
     pdir.mkdir(parents=True, exist_ok=True)
+    parts = [(cap_wall, "cell_caps", _LE_RGB)]
+    parts += [(w, f"web_{i}", GOLD) for i, w in enumerate(webs)]
+    parts += [(shell, "fw_shell", SHELL_RGB)]
     manifest = []
-    for k, s in enumerate(cells):
-        name, rgb, _ = _cell_style(k, N_CELLS)
-        s.color, s.label = Color(*rgb), name
+    for s, name, rgb in parts:
+        s.color, s.label = Color(*rgb, 0.3 if name == "fw_shell" else 1.0), name
         export_stl(s, str(pdir / f"{name}.stl"))
-        manifest.append((name, rgb, 1.0))
-    for i, lg in enumerate(longerons):
-        lg.color, lg.label = Color(*GOLD), f"longeron_{i}"
-        export_stl(lg, str(pdir / f"longeron_{i}.stl"))
-        manifest.append((f"longeron_{i}", GOLD, 1.0))
-    shell.color, shell.label = Color(*SHELL_RGB, 0.3), "fw_shell"
-    stock.color, stock.label = Color(*STOCK_RGB), "bearing_stock"
-    export_stl(shell, str(pdir / "fw_shell.stl"))
-    export_stl(stock, str(pdir / "bearing_stock.stl"))
-    manifest += [("fw_shell", SHELL_RGB, 0.3), ("bearing_stock", STOCK_RGB, 1.0)]
+        manifest.append((name, rgb, 0.3 if name == "fw_shell" else 1.0))
 
-    asm = Compound(children=[*cells, *longerons, shell, stock])
+    asm = Compound(children=[s for s, _, _ in parts])
     # STEP is written in MILLIMETRES (the OCC/STEP unit) so it imports at true size in Fusion 360 /
     # SolidWorks / etc. — our model is in metres → scale ×1000. Scale each labelled body and rebuild
     # the Compound (scaling the whole Compound at once drops the body names).
     mm_parts = []
-    for p in [*cells, *longerons, shell, stock]:
+    for p, _, _ in parts:
         q = p.scale(1000.0)
         q.label, q.color = p.label, p.color
         mm_parts.append(q)
@@ -251,7 +213,7 @@ def main() -> None:
     print(f"  wrote {len(manifest)} part STLs → exports/torsion_box/ + amazon_torsion_box.step "
           f"(mm; {len(asm.solids())} named solid bodies)")
 
-    _render_section(spec, layout, out)
+    _render_section(spec, out, N_CELLS)
     print(f"DONE in {time.perf_counter() - t0:.1f} s")
 
 
@@ -263,9 +225,9 @@ def _write_manifest(pdir: Path, manifest) -> None:
     (pdir / "manifest.csv").write_text("\n".join(lines) + "\n")
 
 
-def _render_section(spec: AmazonMastSpec, layout: CellLayout, out: Path) -> None:
-    """Clean conformal root cross-section (line art — matplotlib is fine for 2-D; the 3-D is the
-    ParaView render). Caps lie ON the ellipse — this is the shape, not a stack of rectangles."""
+def _render_section(spec, out: Path, n_cells: int) -> None:
+    """Root + stock cross-sections (line art) showing the continuous build's representation: FW
+    shell ring + cell-cap annular wall + internal webs — and how it morphs airfoil→round."""
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -273,46 +235,38 @@ def _render_section(spec: AmazonMastSpec, layout: CellLayout, out: Path) -> None
     from matplotlib.path import Path as MPath
 
     def ring(outer, inner, fc, alpha=1.0, lw=0.8):
-        """Annulus PathPatch (even-odd hole) so the hollow closed-wire section shows."""
         v = np.vstack([outer, outer[0], inner[::-1], inner[-1]])
         codes = ([MPath.MOVETO] + [MPath.LINETO] * (len(outer) - 1) + [MPath.CLOSEPOLY]
                  + [MPath.MOVETO] + [MPath.LINETO] * (len(inner) - 1) + [MPath.CLOSEPOLY])
         return PathPatch(MPath(v, codes), fc=fc, ec="k", lw=lw, alpha=alpha)
 
-    fig, ax = plt.subplots(figsize=(12, 4.6))
-    ax.set_facecolor("white")
-    c0, t0 = spec.chord_at_z(0.0), spec.thickness_at_z(0.0)
-    oml = spec.section_oml(0.0, n_pts=260)
-    env = _centered_ellipse(c0 - 2 * T_SHELL, t0 - 2 * T_SHELL, 260)
-
-    # shell ring (OML → inset), hollow
-    ax.add_patch(ring(oml, env, SHELL_RGB, 0.55, lw=1.0))
-    ax.plot([], [], "s", color=SHELL_RGB, label=f"FW shell ({T_SHELL*1e3:.0f} mm)")
-
-    sec = cell_sections(env, layout)
-    cap = _cap_wall(0.0, spec.sail_track_length)
-    for k, cell in enumerate(sec.cells):
-        _, rgb, legend = _cell_style(k, layout.n_cells)
-        o = resample_closed_polyline(np.asarray(cell, float), 200)
-        inner = offset(_face(o), amount=-cap).faces()[0].outer_wire()
-        iw = np.array([((inner @ (i / 160)).X, (inner @ (i / 160)).Y) for i in range(161)])
-        ax.fill(o[:, 0], o[:, 1], color=rgb, ec="k", lw=0.9)             # cap material
-        ax.fill(iw[:, 0], iw[:, 1], color="white", ec="k", lw=0.6)       # hollow void (closed wire)
-        ax.plot([], [], "s", color=rgb, label=f"{legend} (hollow, cap {cap*1e3:.0f} mm)")
-    for ch in sec.channels:                       # the TRUE fillet-gap channels (top + bottom)
-        for p in (ch.top_poly, ch.bottom_poly):
-            if len(p) >= 3:
-                ax.fill(p[:, 0], p[:, 1], color=GOLD, ec="k", lw=0.6)
-    ax.plot([], [], "s", color=GOLD, label="UD longeron (fillet-gap channel)")
-
-    ax.set_aspect("equal")
-    ax.grid(alpha=0.18)
-    ax.legend(loc="center left", bbox_to_anchor=(1.0, 0.5), fontsize=10, framealpha=0.95)
-    ax.set_title("Amazon-baseline wingmast — conformal multi-cell torsion box (root, 750×300 mm)\n"
-                 f"{layout.n_cells} conformal cells (caps ON the ellipse) + corner longerons, inside the FW shell",
+    fig, axs = plt.subplots(1, 2, figsize=(12, 4.6))
+    for ax, (z, lbl) in zip(axs, [(0.0, "wing root (airfoil)"),
+                                  (0.55 * spec.heel_z, "stock (round bearing journal)")]):
+        oml = spec.section_oml(float(z), n_pts=260)
+        env = _inset(oml, T_SHELL)
+        cap = _cap_wall(float(z), spec.sail_track_length)
+        env_in = _inset(env, cap)
+        ax.add_patch(ring(oml, env, SHELL_RGB, 0.55, lw=1.0))            # FW shell
+        ax.add_patch(ring(env, env_in, _LE_RGB, 1.0))                   # cell caps (void inside)
+        up, lo = _split_upper_lower(np.asarray(env, float))
+        xle, xte = float(env[:, 0].min()), float(env[:, 0].max())
+        for k in range(1, n_cells):
+            xw = xle + k / n_cells * (xte - xle)
+            yhi = float(_y_on(up, np.array([xw]))[0]) - cap
+            ylo = float(_y_on(lo, np.array([xw]))[0]) + cap
+            ax.fill([xw - T_WEB / 2, xw + T_WEB / 2, xw + T_WEB / 2, xw - T_WEB / 2],
+                    [ylo, ylo, yhi, yhi], color=GOLD, ec="k", lw=0.4)
+        ax.set_aspect("equal")
+        ax.grid(alpha=0.18)
+        ax.set_title(lbl, fontsize=11, weight="bold")
+        ax.set_xlabel("chord X [m]")
+    for lab, col in [("FW shell", SHELL_RGB), ("cell caps", _LE_RGB), ("webs", GOLD)]:
+        axs[0].plot([], [], "s", color=col, label=lab)
+    axs[0].legend(loc="upper right", fontsize=9, framealpha=0.95)
+    fig.suptitle(f"Continuous multi-cell torsion box — {n_cells} cells run masthead→heel, "
+                 "morphing from airfoil (wing) to a round multi-cell (stock journal)",
                  fontsize=12, weight="bold")
-    ax.set_xlabel("chord  X [m]")
-    ax.set_ylabel("normal  Y [m]")
     fig.tight_layout()
     fig.savefig(str(out / "amazon_torsion_box_section.png"), dpi=150, bbox_inches="tight")
     plt.close(fig)
