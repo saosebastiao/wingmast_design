@@ -99,3 +99,17 @@ n, r, p, tip, pct = min(runs, key=lambda x: x[1].mass_per_mast_kg)
 print(f"\nOPTIMUM: {n} cells → {r.mass_per_mast_kg:.0f} kg/mast ({2*r.mass_per_mast_kg:.0f} kg both), "
       f"cap {p.layup_f0*100:.0f}% 0°, root cap {r.root_cap_mm:.0f} mm, helix {p.shell_helix_deg:.0f}°, "
       f"tip {tip:.1f} m ({pct:.0f}%)   [wall {time.perf_counter()-t0:.0f} s]")
+
+# write the design file the CAD export reads (regenerable; carries the length/section scales)
+import json  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+tag = f"{int(round(TOTAL_M))}m" + (f"_od{int(round(STOCK_OD_MM))}" if STOCK_OD_MM else "")
+out = Path(__file__).resolve().parent.parent / "exports" / f"conformal_best_{tag}.json"
+out.parent.mkdir(exist_ok=True)
+out.write_text(json.dumps({
+    "n_cells": p.n_cells, "blend_radius": p.blend_radius, "t_web": p.t_web, "t_shell": p.t_shell,
+    "shell_helix_deg": p.shell_helix_deg, "layup_f0": p.layup_f0, "layup_f45": p.layup_f45,
+    "layup_f90": p.layup_f90, "s_l": S_L, "s_s": S_S, "mass_per_mast_kg": r.mass_per_mast_kg,
+    "vs_amazon_pct": r.vs_amazon_pct, "cap_schedule": r.cap_schedule}, indent=2))
+print(f"wrote {out}  →  export the CAD with:  TORSION_BOX_DESIGN={out} just example 62_amazon_torsion_box")
