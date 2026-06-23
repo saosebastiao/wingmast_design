@@ -5,7 +5,7 @@ published station table (2.5:1 ellipse, 750×300 mm at the deck → 300×120 mm 
 modified-entasis taper, round OD500/OD450 bearing stock), checks each station against the
 published dimensions, reports the two journal stations, and exports STL + STEP (Article XI).
 
-Run: `just example 55_amazon_mast`
+Run: `just example 01_amazon_mast`
 """
 from __future__ import annotations
 

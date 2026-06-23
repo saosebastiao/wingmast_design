@@ -5,7 +5,7 @@ filament-wound cells + co-bonded UD channel longerons + filament-wound shell). C
 manufacturability (`check_fit`) and reports the first-order mass of each vs the X2 his-construction
 estimate. (X4 then optimizes the internal distribution to minimise mass.)
 
-Run: `just example 57_amazon_myway_build`
+Run: `just example 03_amazon_myway_build`
 """
 from __future__ import annotations
 

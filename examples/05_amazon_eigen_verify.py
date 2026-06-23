@@ -7,7 +7,7 @@ converged-mesh shell-FEA eigen. The FEA's linear-w geometric stiffness is uncons
 overstiff (~20 %) for the high-D11/D22 cap — so feasibility is judged on the conservative
 exact/closed-form floor (λ = 1.5), with the FEA confirming only MORE margin (Article III).
 
-Run: `just example 59_amazon_eigen_verify`
+Run: `just example 05_amazon_eigen_verify`
 """
 from __future__ import annotations
 

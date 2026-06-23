@@ -5,7 +5,7 @@ Reproduces Amazon as Sponberg built and sized it (carbon box spar + glass fairin
 never published — cross-validated against his "12.7 mm box" drawing annotation, with a sensitivity
 band and an FEA deflection check + closed-form local-buckling margin.
 
-Run: `just example 56_amazon_mass_estimate`
+Run: `just example 02_amazon_mass_estimate`
 """
 from __future__ import annotations
 

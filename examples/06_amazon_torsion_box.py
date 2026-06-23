@@ -18,7 +18,7 @@ labelled) — the sized schedule comes from the as-built re-size (flagged separa
 Writes one **STL per part** into ``exports/torsion_box/`` (so ParaView can colour them as a real
 CAD assembly — ``paraview/torsion_box.py``), a coloured STEP, and a clean conformal cross-section.
 
-Run: `just example 62_amazon_torsion_box`
+Run: `just example 06_amazon_torsion_box`
 """
 from __future__ import annotations
 

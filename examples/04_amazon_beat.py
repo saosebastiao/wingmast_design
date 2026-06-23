@@ -6,7 +6,7 @@ at Amazon's own loads/criteria (strength + orthotropic cap-panel buckling λ ≥
 points: (A) mass-optimal at Amazon's criteria, and (B) stiffness-matched (also deflection ≤
 Amazon's), so the win is shown both ways. The full progression X2 → X3 → X4 is the headline.
 
-Run: `just example 58_amazon_beat`   (slow — differential evolution; not in CI)
+Run: `just example 04_amazon_beat`   (slow — differential evolution; not in CI)
 """
 from __future__ import annotations
 
