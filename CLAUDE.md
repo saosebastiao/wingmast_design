@@ -88,6 +88,11 @@ yacht with **two tandem NACA-0018 wingmasts** (`docs/specification.md`).
 - `sizing-run` — how to launch/monitor/report long sizing runs.
 - `record-finding` — the findings.md + decisions-log recording workflow.
 - `justfile-tasks` — project task runner recipes and how to extend them.
+- `fusion-to-build123d` — translating a Fusion 360 design (or Fusion Python API script) into
+  idiomatic build123d, resolving the impedance mismatches (timeline→linear script, named
+  refs→geometric selectors, constraint solver→explicit coords, cm/rad→mm/deg). Bundles a
+  verified API mapping table + `fidelity_check.py` validator. (Reverse of the STEP→Fusion
+  export path.)
 
 Reviewer subagent `physics-reviewer` (`.claude/agents/`) checks structural/aero/laminate/
 sizing changes against the constitution before they're called done.
