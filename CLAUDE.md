@@ -109,12 +109,22 @@ sizing changes against the constitution before they're called done.
 
 - `examples/` numbered scripts are the measurement record; not run in CI (no CI — local
   suite only). Many examples are shell-beam-era and will be refactored per the plan.
+- `notebooks/` mirror `examples/NN` as interactive **marimo** notebooks (`just edit NN`,
+  `just nb-run NN`; `just nb-check` lints `--strict` + headless-executes all). The scripts
+  stay the headless measurement record; notebooks add narration, parameter controls, inline
+  matplotlib, and PASS/FAIL badges + measured wall-clock (helpers in
+  `wingmast_design.viz.marimo_ui`, lazy-importing marimo so the runtime package stays
+  marimo-free). Each notebook mirrors its source's asserts exactly (don't invent gates).
+  Heavy compute (DE optimize, FEA eigen, lofting/export) is `mo.ui.run_button`-gated so the
+  headless smoke-test stays fast. marimo (a dev dep) owns notebook formatting — `notebooks/`
+  is excluded from ruff so `just fix` won't fight it.
 - `tests/` is the fast unit suite (`just test` / `uv run pytest`); `sizing`-marked tests are
   the slow split (`just test` excludes them).
 - `src/wingmast_design/` packages: `geometry/` (build123d OML, airfoil), `aero/`
   (AeroSandbox loads), `materials/` (UD ply + CLT + failure), `structural/` (FEM: shell,
   beam_shell, buckling, eigen_buckling, frame), `beams/` (sizer: laminate_sizing,
-  sensitivity, design_vector, constraints, cross_section), `viz/` (VTU / ocp_vscode),
+  sensitivity, design_vector, constraints, cross_section), `viz/` (VTU / ocp_vscode /
+  marimo_ui notebook helpers),
   `truss/` (archived analysis-only). New per-plan: rotating-mast geometry, tandem aero,
   journal BCs, box-spar sections, manufacturing/winding.
 - Geometry viewer: examples call `show_in_viewer(part)` → OCP CAD Viewer (port 3939); no-op

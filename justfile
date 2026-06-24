@@ -48,6 +48,32 @@ examples:
     for f in examples/*.py; do echo "--- $f ---"; uv run python "$f" || exit 1; done
 
 # ---------------------------------------------------------------------------
+# marimo notebooks — interactive view of examples/*.py (examples stay the
+# headless measurement record; notebooks add narration + controls + inline viz)
+# ---------------------------------------------------------------------------
+
+# Edit a notebook in the marimo editor (usage: just edit 01_amazon_mast)
+edit name:
+    uv run marimo edit notebooks/{{name}}.py
+
+# Serve a notebook as a read-only app (usage: just nb-run 01_amazon_mast)
+nb-run name:
+    uv run marimo run notebooks/{{name}}.py
+
+# Validate every notebook: marimo lint (--strict) + headless execute. The
+# headless run keeps run-button-gated heavy cells gated, so this stays fast;
+# any R-AMZ assertion that breaks exits non-zero (the measurement gate).
+nb-check:
+    #!/usr/bin/env bash
+    set -e
+    for f in notebooks/*.py; do
+      echo "--- $f ---"
+      uv run marimo check --strict "$f"
+      uv run python "$f" >/dev/null
+    done
+    echo "All notebooks: marimo-lint clean + executed headless OK."
+
+# ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
 

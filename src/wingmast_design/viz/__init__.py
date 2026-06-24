@@ -55,3 +55,10 @@ def show_in_viewer(*objects: Any, names: list[str] | None = None, port: int = 39
         except Exception as exc:
             print(f"OCP CAD Viewer rejected the payload: {exc}")
             return False
+
+
+# Interactive-notebook (marimo) rendering helpers. marimo is imported lazily
+# inside these functions, so importing this package never requires marimo.
+from .marimo_ui import check, kv, stamp, table  # noqa: E402
+
+__all__ = ["show_in_viewer", "check", "kv", "stamp", "table"]

@@ -26,6 +26,7 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "marimo>=0.23.10",
     "pytest>=9.0.3",
 ]
 
@@ -35,3 +36,9 @@ addopts = "-q"
 markers = [
     "sizing: SLSQP/FEA sizing test (slow; runs in the separate CI sizing job, not on every push)",
 ]
+
+[tool.ruff]
+# marimo notebooks under notebooks/ are owned by marimo's own linter/formatter
+# (`marimo check --fix`, surfaced as `just nb-check`). Exclude them from ruff so
+# `just fix` (ruff format) cannot fight marimo's canonical per-cell format.
+extend-exclude = ["notebooks"]
